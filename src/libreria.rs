@@ -4,19 +4,13 @@ use std::time::Duration;
 use pcap::Device;
 
 //Stampa a video la lista di ttutti i network adapter e ritorna al main tale lista.
-pub fn print_all_devices () -> Vec<Device>{
-    let list = Device::list().unwrap();
+pub fn print_all_devices (list : Vec<Device>){
     let mut i =1;
+    println!("The available devices are:");
     for d in list.clone() {
         println!("{}) NAME: {} -- DESCRIPTION: {}",i,d.name, d.desc.unwrap());
         i=i+1;
     }
-    return list;
-}
-
-pub fn manage_parameters (parameters: Args){
-    //il ptimo parametro[0] rappresenta il percorso dell'esegubile (non serve)
-    println!("{:?}",parameters)
 }
 
 
