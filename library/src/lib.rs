@@ -1,3 +1,4 @@
+
 use std::env::Args;
 use std::fs::File;
 use std::io::{stdout, Write};
@@ -27,7 +28,7 @@ pub fn select_device()->  String {
 }
 
 pub fn check_device_available( selected : i32, list:  Vec<Device>) -> bool {
-     selected < list.len() as i32
+    selected < list.len() as i32
 }
 
 pub fn create_file(file_name : String) -> File{
