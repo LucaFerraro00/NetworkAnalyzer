@@ -1,22 +1,24 @@
 mod libreria;
 mod args;
 
-use crate::libreria::{print_all_devices, select_device, check_device_available, capture_packet};
+use crate::libreria::{print_all_devices, select_device, check_device_available, capture_packet, create_file};
 use args::InputArgs;
 use clap::Parser;
 use pcap::Device;
 
 fn main() {
 
+
     println!("Welcome to packet sniffer!");
     println!("---------------------------------");
 
     let arguments = InputArgs::parse();
     let list = Device::list().unwrap();
+    let mut open_file = create_file(arguments.fileName);
 
     match arguments.show {
         true => { print_all_devices(list.clone())}
-        false => { println!("non settato")}
+        false => { () }
     }
 
     let mut selected_code = arguments.device_number;

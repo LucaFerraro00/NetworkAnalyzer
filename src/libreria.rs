@@ -1,5 +1,7 @@
 use std::env::Args;
+use std::fs::File;
 use std::io::{stdout, Write};
+use std::path::Path;
 use std::time::Duration;
 use pcap::Device;
 
@@ -28,6 +30,25 @@ pub fn check_device_available( selected : i32, list:  Vec<Device>) -> bool {
      selected < list.len() as i32
 }
 
+pub fn create_file(file_name : String) -> File{
+    let mut path = "results/".to_string();
+    path.push_str(file_name.as_str());
+    println!("{}",path);
+    let mut f = File::create(path).unwrap();
+    return f;
+}
+
+
+
+pub fn capture_packet (selected_device : Device) {
+    println!("Capture is starting....");
+    let mut cap = selected_device.open().unwrap();
+    while let Ok(packet) = cap.next_packet() {
+        println!("received packet! {:?}", packet);
+        //println!("Data: {}", std::str::from_utf8(packet.data).unwrap())
+    }
+}
+
 
 pub fn progress_bar (){
     let pb = indicatif::ProgressBar::new(100);
@@ -39,14 +60,6 @@ pub fn progress_bar (){
     pb.finish_with_message("done");
 }
 
-pub fn capture_packet (selected_device : Device) {
-    println!("Capture is starting....");
-    let mut cap = selected_device.open().unwrap();
-    while let Ok(packet) = cap.next_packet() {
-        println!("received packet! {:?}", packet);
-        //println!("Data: {}", std::str::from_utf8(packet.data).unwrap())
-    }
-}
 /*
 use log::{info, warn};
 pub fn logging (){
