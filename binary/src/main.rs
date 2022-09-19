@@ -4,6 +4,8 @@ use args::InputArgs;
 use clap::Parser;
 use pcap::Device;
 
+
+
 fn main() {
 
     println!("Welcome to packet sniffer!");
@@ -32,4 +34,5 @@ fn main() {
     println!("The details of the selected device are: ");
     println!("{:?}", selected_device);
     mylib::capture_packet(selected_device);
+
 }
