@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{stdout, Write, BufReader, BufWriter};
 use std::path::Path;
 use std::time::Duration;
-use pcap::Device;
+use pcap::{Device, Capture};
 use rpcap::read::PcapReader;
 use rpcap::write::{PcapWriter, WriteOptions};
 use pdu::*;
@@ -47,16 +47,18 @@ pub fn create_file(file_name : String) -> File{
 
 pub fn capture_packet (selected_device : Device) {
     println!("Capture is starting....");
-    let mut cap = selected_device.open().unwrap();
+    //let mut cap = selected_device.open().unwrap();
+    let mut cap = Capture::from_device(selected_device).unwrap().promisc(true).open().unwrap();
+    println!("Data link: {:?}",cap.get_datalink());
 
     // open savefile using the capture
-    let mut savefile = cap.savefile("testSave.pcap").unwrap();
+   // let mut savefile = cap.savefile("testSave.pcap").unwrap();
 
     while let Ok(packet) = cap.next_packet() {
         println!("received packet! {:?}", packet);
         parse_level2_packet(packet.data)    ;
         // write the packet to the savefile
-        savefile.write(& packet);
+        //savefile.write(& packet);
     }
 }
 
@@ -65,6 +67,7 @@ pub fn parse_level2_packet(packet: &[u8]){
 
         match EthernetPdu::new(&packet) {
             Ok(ethernet_pdu) => {
+                //livello 2
                 println!("[ethernet] destination_address: {:x?}", ethernet_pdu.destination_address().as_ref());
                 println!("[ethernet] source_address: {:x?}", ethernet_pdu.source_address().as_ref());
                 println!("[ethernet] ethertype: 0x{:04x}", ethernet_pdu.ethertype());
@@ -74,17 +77,82 @@ pub fn parse_level2_packet(packet: &[u8]){
                 // upper-layer protocols can be accessed via the inner() method
                 match ethernet_pdu.inner() {
                     Ok(Ethernet::Ipv4(ipv4_pdu)) => {
+                        //livello 3
                         println!("[ipv4] source_address: {:x?}", ipv4_pdu.source_address().as_ref());
                         println!("[ipv4] destination_address: {:x?}", ipv4_pdu.destination_address().as_ref());
                         println!("[ipv4] protocol: 0x{:02x}", ipv4_pdu.protocol());
-                        // upper-layer protocols can be accessed via the inner() method (not shown)
+
+                        match ipv4_pdu.inner() {
+                            //livello 4
+                            Ok(Ipv4::Tcp(tcp_pdu)) =>{
+                                println!("[TCP] source port: {:?}", tcp_pdu.source_port());
+                                println!("[TCP] destination port: {:?}", tcp_pdu.destination_port());
+                            }
+                            Ok(Ipv4::Udp(udp_pdu)) =>{
+                                println!("[UDP] source port: {:?}", udp_pdu.source_port());
+                                println!("[TCP] destination port: {:?}", udp_pdu.destination_port());
+                            }
+                            Ok(Ipv4::Icmp(icmp_pdu)) =>{
+                                println!("[ICMP]  {:?}", icmp_pdu);
+                            }
+                            Ok(Ipv4::Gre(gre_pdu)) =>{
+                                println!("[GRE] {:?}", gre_pdu);
+                            }
+
+                            Ok(other) => {
+                                panic!("Unexpected protocol inside Ipv4Pdu {:?}", other);
+                            }
+
+                            Err(e) => {
+                                panic!("Ipv4pdu::inner() parser failure: {:?}", e);
+                            }
+                        }
+
                     }
                     Ok(Ethernet::Ipv6(ipv6_pdu)) => {
+                        //livello 3
                         println!("[ipv6] source_address: {:x?}", ipv6_pdu.source_address().as_ref());
                         println!("[ipv6] destination_address: {:x?}", ipv6_pdu.destination_address().as_ref());
                         println!("[ipv6] protocol: 0x{:02x}", ipv6_pdu.computed_protocol());
                         // upper-layer protocols can be accessed via the inner() method (not shown)
+
+                        match ipv6_pdu.inner() {
+                            //livello 4
+                            Ok(Ipv6::Tcp(tcp_pdu)) =>{
+                                println!("[TCP] source port: {:?}", tcp_pdu.source_port());
+                                println!("[TCP] destination port: {:?}", tcp_pdu.destination_port());
+                            }
+                            Ok(Ipv6::Udp(udp_pdu)) =>{
+                                println!("[UDP] source port: {:?}", udp_pdu.source_port());
+                                println!("[UDP] destination port: {:?}", udp_pdu.destination_port());
+                            }
+                            Ok(Ipv6::Icmp(icmp_pdu)) =>{
+                                println!("[ICMP]  {:?}", icmp_pdu);
+                            }
+                            Ok(Ipv6::Gre(gre_pdu)) =>{
+                                println!("[GRE] {:?}", gre_pdu);
+                            }
+
+                            Ok(other) => {
+                                panic!("Unexpected protocol inside Ipv6Pdu {:?}", other);
+                            }
+
+                            Err(e) => {
+                                panic!("Ipv6pdu::inner() parser failure: {:?}", e);
+                            }
+                        }
                     }
+
+                    Ok(Ethernet::Arp(arp_pdu)) => {
+                        //livello 3
+                        println!("[ARP] sender hardware address: {:x?}", arp_pdu.sender_hardware_address().as_ref());
+                        println!("[ARP] sender protocol address: {:x?}", arp_pdu.sender_protocol_address().as_ref());
+                        println!("[ARP] target hardware address: {:x?}", arp_pdu.target_hardware_address().as_ref());
+                        println!("[ARP] targer protocol address: {:x?}", arp_pdu.target_protocol_address().as_ref());
+                        //ARP al contrario di ip non consente di vedere cosa c'è nei livelli sucessivi.
+                        //Non ha il metodo inner, è giusto?
+                    }
+
                     Ok(other) => {
                         panic!("Unexpected protocol {:?}", other);
                     }
