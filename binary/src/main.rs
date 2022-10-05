@@ -1,5 +1,6 @@
 mod args;
 
+use std::env;
 use args::InputArgs;
 use clap::Parser;
 use pcap::Device;
@@ -7,6 +8,12 @@ use pcap::Device;
 
 
 fn main() {
+
+    /*
+    Check enovirement variables
+    for (n,v) in env::vars() {
+        println!("{}: {}", n,v);
+    }*/
 
     println!("Welcome to packet sniffer!");
     println!("---------------------------------");

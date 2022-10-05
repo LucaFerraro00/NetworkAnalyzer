@@ -230,6 +230,7 @@ dependencies = [
  "env_logger",
  "indicatif",
  "pcap",
+ "pdu",
  "rpcap",
 ]
 
@@ -279,6 +280,12 @@ dependencies = [
  "regex",
  "windows-sys",
 ]
+
+[[package]]
+name = "pdu"
+version = "1.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3957aaf5fb779dbb9d95ccfd447b45cbdc7e49381f0f8f757614d30a7c32f4ce"
 
 [[package]]
 name = "proc-macro-error"
