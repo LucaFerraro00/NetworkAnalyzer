@@ -1,4 +1,4 @@
-
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone)]
 #[repr(C)] //per far funzionare timeval
@@ -26,7 +26,7 @@ impl CustomPacket {
     }
 }
 
-#[derive(Eq, PartialEq, Debug, Clone, Hash)]
+#[derive(Eq, PartialEq, Debug, Clone, Hash, Serialize)]
 pub struct CustomKey{
     pub ip : [u8; 4],
     pub port : u16,
@@ -38,7 +38,7 @@ impl  CustomKey {
     }
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone, Serialize)]
 pub struct CustomData {
     pub len : u32,
     pub protocols : Vec<String>,

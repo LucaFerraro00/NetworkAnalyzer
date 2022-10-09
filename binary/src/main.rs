@@ -9,8 +9,8 @@ use pcap::Device;
 
 fn main() {
 
-    /*
-    Check enovirement variables
+/*
+    //Check enovirement variables
     for (n,v) in env::vars() {
         println!("{}: {}", n,v);
     }*/

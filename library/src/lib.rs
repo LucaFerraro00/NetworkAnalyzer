@@ -11,6 +11,7 @@ use rpcap::read::PcapReader;
 use rpcap::write::{PcapWriter, WriteOptions};
 use pdu::*;
 use crate::structures::{CustomPacket, CustomKey, CustomData};
+use serde::{Serialize, Deserialize};
 
 
 //Stampa a video la lista di ttutti i network adapter e ritorna al main tale lista.
@@ -55,7 +56,7 @@ pub fn capture_packet (selected_device : Device) {
     let mut cap = Capture::from_device(selected_device).unwrap().open().unwrap();
     println!("Data link: {:?}",cap.get_datalink());
 
-    let mut map : HashMap<CustomKey, CustomData> = HashMap::new();
+    let mut map : HashMap<String, CustomData> = HashMap::new();
     let mut counter = 0;
 
         while let Ok(packet) = cap.next_packet() {
@@ -66,10 +67,11 @@ pub fn capture_packet (selected_device : Device) {
             parse_level2_packet(packet.data, &mut custom_packet);
             println!("{:?}", custom_packet);
             let mut key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port);
+            let key_string = serde_json::to_string(&key1).unwrap();
             let mut key2 = CustomKey::new(custom_packet.dest_addr, custom_packet.dest_port);
             let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list);
 
-            let r = map.get(&key1);
+            let r = map.get(&key_string);
 
             match r {
                 Some(d) => {
@@ -81,13 +83,12 @@ pub fn capture_packet (selected_device : Device) {
                         }
                     }
                 }
-                None => { map.insert(key1, custom_data); }
+                None => { map.insert(key_string, custom_data); }
             }
-
-            counter += 1;
-            if counter>50 {    println!("{:?}",map);       }
-
+            counter+=1;
+            if counter>50 {break}
             }
+    write_to_file(map);
 }
 
 pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket){
@@ -230,6 +231,14 @@ pub fn progress_bar (){
     pb.finish_with_message("done");
 }
 
+
+
+pub fn write_to_file(map : HashMap<String, CustomData>){
+
+    let mut file = File::create("foo.txt").unwrap();
+    serde_json::to_writer(file, &map).unwrap();
+
+}
 /*
 use log::{info, warn};
 pub fn logging (){
