@@ -10,8 +10,10 @@ use pcap::{Device, Capture};
 use rpcap::read::PcapReader;
 use rpcap::write::{PcapWriter, WriteOptions};
 use pdu::*;
+use pdu::Tcp::Raw;
 use crate::structures::{CustomPacket, CustomKey, CustomData};
 use serde::{Serialize, Deserialize};
+use dns_parser::{Packet};
 
 
 //Stampa a video la lista di ttutti i network adapter e ritorna al main tale lista.
@@ -60,12 +62,12 @@ pub fn capture_packet (selected_device : Device) {
     let mut counter = 0;
 
         while let Ok(packet) = cap.next_packet() {
-            println!("received packet!", );
+            //println!("received packet!", );
             let mut custom_packet = CustomPacket::new(
                 packet.header.len
             );
             parse_level2_packet(packet.data, &mut custom_packet);
-            println!("{:?}", custom_packet);
+            //println!("{:?}", custom_packet);
             let mut key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port);
             let key_string = serde_json::to_string(&key1).unwrap();
             let mut key2 = CustomKey::new(custom_packet.dest_addr, custom_packet.dest_port);
@@ -86,7 +88,7 @@ pub fn capture_packet (selected_device : Device) {
                 None => { map.insert(key_string, custom_data); }
             }
             counter+=1;
-            if counter>50 {break}
+            if counter>2000 {break}
             }
     write_to_file(map);
 }
@@ -95,6 +97,9 @@ pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket
     // parse a layer 2 (Ethernet) packet using EthernetPdu::new()
     let mut dest_pair= String::new();
     let mut source_pair = String::new();
+
+
+
         match EthernetPdu::new(&packet_data) {
             Ok(ethernet_pdu) => {
                 custom_packet.prtocols_list.push("ethernet".to_string());
@@ -131,13 +136,40 @@ pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket
                                 custom_packet.dest_port = tcp_pdu.destination_port();
                                 /*println!("[TCP] source port: {:?}", tcp_pdu.source_port());
                                 println!("[TCP] destination port: {:?}", tcp_pdu.destination_port());*/
+
+                                let tcp_payload = tcp_pdu.inner().unwrap();
+
+                                match tcp_payload {
+                                    Raw(payload)=> {match Packet::parse(payload) {
+                                        Ok( dns_packet) =>{
+                                            custom_packet.prtocols_list.push("DNS".to_string());
+                                            println!("{:?}",dns_packet);
+                                        }
+                                        Err(e)=>{println!("Packet is not DNS:{:?}",e)}
+                                    }}
+                                }
+
                             }
+
                             Ok(Ipv4::Udp(udp_pdu)) =>{
                                 custom_packet.prtocols_list.push("UDP".to_string());
                                 custom_packet.src_port = udp_pdu.source_port();
                                 custom_packet.dest_port = udp_pdu.destination_port();
                                 /*println!("[UDP] source port: {:?}", udp_pdu.source_port());
                                 println!("[TCP] destination port: {:?}", udp_pdu.destination_port());*/
+
+                                let udp_payload = udp_pdu.inner().unwrap();
+
+                                match udp_payload {
+                                    Udp::Raw(payloadd)=> {match Packet::parse(payloadd) {
+                                        Ok( dns_packet) =>{
+                                            custom_packet.prtocols_list.push("DNS".to_string());
+                                            println!("{:?}",dns_packet);
+                                        }
+                                        Err(e)=>{println!("Packet is not DNS:{:?}",e)}
+                                    }}
+                                }
+
                             }
 
 
