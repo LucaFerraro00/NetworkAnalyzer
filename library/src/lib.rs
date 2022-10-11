@@ -88,7 +88,7 @@ pub fn capture_packet (selected_device : Device) {
                 None => { map.insert(key_string, custom_data); }
             }
             counter+=1;
-            if counter>2000 {break}
+            if counter>200 {break}
             }
     write_to_file(map);
 }
@@ -143,9 +143,9 @@ pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket
                                     Raw(payload)=> {match Packet::parse(payload) {
                                         Ok( dns_packet) =>{
                                             custom_packet.prtocols_list.push("DNS".to_string());
-                                            println!("{:?}",dns_packet);
+                                            //println!("{:?}",dns_packet);
                                         }
-                                        Err(e)=>{println!("Packet is not DNS:{:?}",e)}
+                                        Err(e)=>{/*println!("Packet is not DNS:{:?}",e)*/}
                                     }}
                                 }
 
@@ -164,9 +164,9 @@ pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket
                                     Udp::Raw(payloadd)=> {match Packet::parse(payloadd) {
                                         Ok( dns_packet) =>{
                                             custom_packet.prtocols_list.push("DNS".to_string());
-                                            println!("{:?}",dns_packet);
+                                            //println!("{:?}",dns_packet);
                                         }
-                                        Err(e)=>{println!("Packet is not DNS:{:?}",e)}
+                                        Err(e)=>{/*println!("Packet is not DNS:{:?}",e)*/}
                                     }}
                                 }
 

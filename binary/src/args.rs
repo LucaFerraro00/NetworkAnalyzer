@@ -13,5 +13,8 @@ pub struct InputArgs {
     /// Show all the device available
     #[clap(short, long)]
     pub show: bool,
+
+    #[clap(short, long)]
+    pub prova: bool,
 }
 // i commenti con /// apparirano sull'interfaccia video all'utente!
