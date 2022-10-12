@@ -15,11 +15,15 @@ fn main() {
 
     let mut arguments = InputArgs::parse();
 
+    let pause= false;
+    let mut end = false;
+
     /*nel thread principale ci deve essere una sorta di loop che aggiorna i parametri presi dal terminale
       per mettere in pausa o rifar partire lo sniffing.*/
 
 
     let th1 = thread::spawn(move||{
+
         let list = Device::list().unwrap();
         match arguments.show {
             true => { mylib::print_all_devices(list.clone())}
@@ -38,10 +42,20 @@ fn main() {
         let selected_device = list[selected_code -1].clone();
         println!("The details of the selected device are: ");
         println!("{:?}", selected_device);
-        mylib::capture_packet(selected_device);
+        mylib::capture_packet(selected_device, end);
     });
 
-    
+    loop {
+        let mut line = String::new();
+        println!("Enter your command :");
+        let b1 = std::io::stdin().read_line(&mut line).unwrap();
+        if line.contains("ab") {
+            end = true;
+            println!("set end: {}",end);
+        }
+        if end {break}
+    }
+
 
     match th1.join() {
         //non serve a nulla, solo per controllare che sia tutto ok
@@ -54,7 +68,8 @@ fn main() {
 
 
 /*
-    let mut line = String::new();
-    println!("Enter your command :");
-    let b1 = std::io::stdin().read_line(&mut line).unwrap();
-    println!("comando inserito: {:?}",line);*/
+
+let mut line = String::new();
+println!("Enter your command :");
+let b1 = std::io::stdin().read_line(&mut line).unwrap();
+println!("comando inserito: {:?}",line);*/

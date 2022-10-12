@@ -5,7 +5,6 @@ use std::env::Args;
 use std::fs::File;
 use std::io::{stdout, Write, BufReader, BufWriter};
 use std::path::Path;
-use std::time::Duration;
 use pcap::{Device, Capture};
 use rpcap::read::PcapReader;
 use rpcap::write::{PcapWriter, WriteOptions};
@@ -14,7 +13,7 @@ use pdu::Tcp::Raw;
 use crate::structures::{CustomPacket, CustomKey, CustomData};
 use serde::{Serialize, Deserialize};
 use dns_parser::{Packet};
-
+use std::time::{Duration, SystemTime};
 
 //Stampa a video la lista di ttutti i network adapter e ritorna al main tale lista.
 pub fn print_all_devices (list : Vec<Device>){
@@ -52,14 +51,14 @@ pub fn create_file(file_name : String) -> File{
 
 
 
-pub fn capture_packet (selected_device : Device) {
+pub fn capture_packet (selected_device : Device, end:bool) {
     println!("Capture is starting....");
     //let mut cap = selected_device.open().unwrap();
     let mut cap = Capture::from_device(selected_device).unwrap().open().unwrap();
     println!("Data link: {:?}",cap.get_datalink());
 
     let mut map : HashMap<String, CustomData> = HashMap::new();
-    let mut counter = 0;
+    let mut now = SystemTime::now();
 
         while let Ok(packet) = cap.next_packet() {
             //println!("received packet!", );
@@ -87,11 +86,22 @@ pub fn capture_packet (selected_device : Device) {
                 }
                 None => { map.insert(key_string, custom_data); }
             }
-            counter+=1;
-            if counter>200 {break}
+
+            let time_interval = Duration::from_secs(10);
+            let mut diff = now.elapsed().unwrap();
+            if diff > time_interval {
+                write_to_file(map.clone());
+                println!("end= {}", end);
+
+                now = SystemTime::now();
             }
-    write_to_file(map);
+            if end {
+                break
+            }
+        }
+    println!("finito lo sniffing")
 }
+
 
 pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket){
     // parse a layer 2 (Ethernet) packet using EthernetPdu::new()
@@ -267,7 +277,7 @@ pub fn progress_bar (){
 
 pub fn write_to_file(map : HashMap<String, CustomData>){
 
-    let mut file = File::create("foo.txt").unwrap();
+    let mut file = File::create("report.txt").unwrap();
     serde_json::to_writer(file, &map).unwrap();
 
 }
