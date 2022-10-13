@@ -1,10 +1,12 @@
 mod args;
 
 use std::{env, thread};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, SystemTime};
 use args::InputArgs;
 use clap::Parser;
 use pcap::Device;
-
 
 
 fn main() {
@@ -12,11 +14,19 @@ fn main() {
 
     println!("Welcome to packet sniffer!");
     println!("---------------------------------");
+    println!("THE CAPTURE IS GOING ON....");
+    println!("digit 'pause' to temporaly stop the sniffing");
+    println!("digit 'resume' to resum the sniffing");
+    println!("digit 'end' to finish the sniffing");
+
 
     let mut arguments = InputArgs::parse();
 
-    let pause= false;
-    let mut end = false;
+    let mut pause = Arc::new(Mutex::new(false));
+    let mut pause_copy= pause.clone();
+    let mut end = Arc::new(Mutex::new(false));
+    let mut end_copy= end.clone();
+
 
     /*nel thread principale ci deve essere una sorta di loop che aggiorna i parametri presi dal terminale
       per mettere in pausa o rifar partire lo sniffing.*/
@@ -39,21 +49,50 @@ fn main() {
             selected_code = mylib::select_device().parse::<usize>().unwrap();
             available = mylib::check_device_available( selected_code as i32, list.clone());
         }
-        let selected_device = list[selected_code -1].clone();
-        println!("The details of the selected device are: ");
-        println!("{:?}", selected_device);
-        mylib::capture_packet(selected_device, end);
+
+        let mut now = SystemTime::now();
+        let mut print_report = false;
+
+
+        let mut map : HashMap<String, mylib::structures::CustomData> = HashMap::new();
+
+        loop {
+            let mut e = end_copy.clone();
+            let mut p = pause_copy.clone();
+            let selected_device = list[selected_code -1].clone();
+            if *p.lock().unwrap()==false {
+                let time_interval = Duration::from_secs(10);
+                let mut diff = now.elapsed().unwrap();
+                if diff > time_interval {
+                    print_report=true;
+                    now = SystemTime::now();
+                }
+                map = mylib::capture_packet(selected_device, print_report, map);
+                print_report=false;
+            }
+            //println!("dentro loop thread secondario: end={}",*end.lock().unwrap());
+            if *e.lock().unwrap() {break}
+        }
     });
 
     loop {
+        let mut end_copy= end.clone();
         let mut line = String::new();
         println!("Enter your command :");
         let b1 = std::io::stdin().read_line(&mut line).unwrap();
-        if line.contains("ab") {
-            end = true;
-            println!("set end: {}",end);
+        if line.contains("end") {
+            *end.lock().unwrap() = true;
+            println!("goodbye");
         }
-        if end {break}
+        if line.contains("pause") {
+            *pause.lock().unwrap() = true;
+            println!("CAPTURE IS WAITING FOR REUMING");
+        }
+        if line.contains("resume") {
+            *pause.lock().unwrap() = false;
+            println!("CAPTURE IS GOING ON");
+        }
+        if *end_copy.lock().unwrap() {break}
     }
 
 

@@ -1,4 +1,4 @@
-mod structures;
+pub mod structures;
 
 use std::collections::HashMap;
 use std::env::Args;
@@ -51,14 +51,11 @@ pub fn create_file(file_name : String) -> File{
 
 
 
-pub fn capture_packet (selected_device : Device, end:bool) {
-    println!("Capture is starting....");
+pub fn capture_packet (selected_device : Device, print_report:bool, mut map: HashMap<String, CustomData>) -> HashMap<String,CustomData>{
     //let mut cap = selected_device.open().unwrap();
     let mut cap = Capture::from_device(selected_device).unwrap().open().unwrap();
-    println!("Data link: {:?}",cap.get_datalink());
+    //println!("Data link: {:?}",cap.get_datalink());
 
-    let mut map : HashMap<String, CustomData> = HashMap::new();
-    let mut now = SystemTime::now();
 
         while let Ok(packet) = cap.next_packet() {
             //println!("received packet!", );
@@ -86,20 +83,12 @@ pub fn capture_packet (selected_device : Device, end:bool) {
                 }
                 None => { map.insert(key_string, custom_data); }
             }
-
-            let time_interval = Duration::from_secs(10);
-            let mut diff = now.elapsed().unwrap();
-            if diff > time_interval {
+            if print_report {
                 write_to_file(map.clone());
-                println!("end= {}", end);
-
-                now = SystemTime::now();
             }
-            if end {
                 break
-            }
         }
-    println!("finito lo sniffing")
+    return  map;
 }
 
 
