@@ -94,10 +94,6 @@ pub fn capture_packet (selected_device : Device, print_report:bool, mut map: Has
 
 pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket){
     // parse a layer 2 (Ethernet) packet using EthernetPdu::new()
-    let mut dest_pair= String::new();
-    let mut source_pair = String::new();
-
-
 
         match EthernetPdu::new(&packet_data) {
             Ok(ethernet_pdu) => {
@@ -113,19 +109,19 @@ pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket
                         /*println!("[ipv4] source_address: {:x?}", ipv4_pdu.source_address().as_ref());
                         println!("[ipv4] destination_address: {:x?}", ipv4_pdu.destination_address().as_ref());
                         println!("[ipv4] protocol: 0x{:02x}", ipv4_pdu.protocol());*/
-                        custom_packet.src_addr= ipv4_pdu.source_address();
-                        custom_packet.dest_addr= ipv4_pdu.destination_address();
+                        let src_vec = Vec::from(ipv4_pdu.source_address());
+                        let dst_vec = Vec::from(ipv4_pdu.destination_address());
+                        custom_packet.src_addr= src_vec;
+                        custom_packet.dest_addr= dst_vec;
                         custom_packet.prtocols_list.push("ipv4".to_string());
 
                         match ipv4_pdu.inner() {
                             //livello 4
                             Ok(Ipv4::Icmp(icmp_pdu)) =>{
-                                println!("[ICMP]  {:?}", icmp_pdu);
                                 custom_packet.prtocols_list.push("ICMP".to_string());
 
                             }
                             Ok(Ipv4::Gre(gre_pdu)) =>{
-                                println!("[GRE] {:?}", gre_pdu);
                                 custom_packet.prtocols_list.push("GRE".to_string());
                             }
 
@@ -184,26 +180,64 @@ pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket
                     }
                     Ok(Ethernet::Ipv6(ipv6_pdu)) => {
                         //livello 3
-                        println!("[ipv6] source_address: {:x?}", ipv6_pdu.source_address().as_ref());
-                        println!("[ipv6] destination_address: {:x?}", ipv6_pdu.destination_address().as_ref());
-                        println!("[ipv6] protocol: 0x{:02x}", ipv6_pdu.computed_protocol());
+                        let src_vec = Vec::from(ipv6_pdu.source_address());
+                        let dst_vec = Vec::from(ipv6_pdu.destination_address());
+                        custom_packet.src_addr= src_vec;
+                        custom_packet.dest_addr= dst_vec;
+                        custom_packet.prtocols_list.push("ipv6".to_string());
                         // upper-layer protocols can be accessed via the inner() method (not shown)
 
                         match ipv6_pdu.inner() {
-                            //livello 4
-                            Ok(Ipv6::Tcp(tcp_pdu)) =>{
-                                println!("[TCP] source port: {:?}", tcp_pdu.source_port());
-                                println!("[TCP] destination port: {:?}", tcp_pdu.destination_port());
-                            }
-                            Ok(Ipv6::Udp(udp_pdu)) =>{
-                                println!("[UDP] source port: {:?}", udp_pdu.source_port());
-                                println!("[UDP] destination port: {:?}", udp_pdu.destination_port());
-                            }
+
                             Ok(Ipv6::Icmp(icmp_pdu)) =>{
-                                println!("[ICMP]  {:?}", icmp_pdu);
+                                custom_packet.prtocols_list.push("ICMP".to_string());
+
                             }
                             Ok(Ipv6::Gre(gre_pdu)) =>{
-                                println!("[GRE] {:?}", gre_pdu);
+                                custom_packet.prtocols_list.push("GRE".to_string());
+                            }
+
+
+                            //livello 4
+                            Ok(Ipv6::Tcp(tcp_pdu)) =>{
+                                custom_packet.prtocols_list.push("TCP".to_string());
+                                custom_packet.src_port = tcp_pdu.source_port();
+                                custom_packet.dest_port = tcp_pdu.destination_port();
+                                /*println!("[TCP] source port: {:?}", tcp_pdu.source_port());
+                                println!("[TCP] destination port: {:?}", tcp_pdu.destination_port());*/
+
+                                let tcp_payload = tcp_pdu.inner().unwrap();
+
+                                match tcp_payload {
+                                    Raw(payload)=> {match Packet::parse(payload) {
+                                        Ok( dns_packet) =>{
+                                            custom_packet.prtocols_list.push("DNS".to_string());
+                                            //println!("{:?}",dns_packet);
+                                        }
+                                        Err(e)=>{/*println!("Packet is not DNS:{:?}",e)*/}
+                                    }}
+                                }
+                            }
+
+                            Ok(Ipv6::Udp(udp_pdu)) =>{
+                                custom_packet.prtocols_list.push("UDP".to_string());
+                                custom_packet.src_port = udp_pdu.source_port();
+                                custom_packet.dest_port = udp_pdu.destination_port();
+                                /*println!("[UDP] source port: {:?}", udp_pdu.source_port());
+                                println!("[TCP] destination port: {:?}", udp_pdu.destination_port());*/
+
+                                let udp_payload = udp_pdu.inner().unwrap();
+
+                                match udp_payload {
+                                    Udp::Raw(payloadd)=> {match Packet::parse(payloadd) {
+                                        Ok( dns_packet) =>{
+                                            custom_packet.prtocols_list.push("DNS".to_string());
+                                            //println!("{:?}",dns_packet);
+                                        }
+                                        Err(e)=>{/*println!("Packet is not DNS:{:?}",e)*/}
+                                    }}
+                                }
+
                             }
 
                             Ok(other) => {
@@ -219,10 +253,10 @@ pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket
                     Ok(Ethernet::Arp(arp_pdu)) => {
                         //livello 3
                         custom_packet.prtocols_list.push("ARP".to_string());
-                        println!("[ARP] sender hardware address: {:x?}", arp_pdu.sender_hardware_address().as_ref());
+                        /*println!("[ARP] sender hardware address: {:x?}", arp_pdu.sender_hardware_address().as_ref());
                         println!("[ARP] sender protocol address: {:x?}", arp_pdu.sender_protocol_address().as_ref());
                         println!("[ARP] target hardware address: {:x?}", arp_pdu.target_hardware_address().as_ref());
-                        println!("[ARP] targer protocol address: {:x?}", arp_pdu.target_protocol_address().as_ref());
+                        println!("[ARP] targer protocol address: {:x?}", arp_pdu.target_protocol_address().as_ref());*/
                         //ARP al contrario di ip non consente di vedere cosa c'è nei livelli sucessivi.
                         //Non ha il metodo inner, è giusto?
                     }
@@ -242,15 +276,6 @@ pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket
 }
 
 
-pub fn read_pcap_file(){
-    // read a PCAP file
-    let infile = File::open("testSave.pcap").unwrap();
-    let reader = BufReader::new(infile);
-    let (file_opts, mut pcapr) = PcapReader::new(reader).unwrap();
-    println!("file_opts: {:?}", file_opts);
-    println!("pcapr: {:?}", pcapr.next().unwrap());
-}
-
 
 pub fn progress_bar (){
     let pb = indicatif::ProgressBar::new(100);
@@ -268,6 +293,7 @@ pub fn write_to_file(map : HashMap<String, CustomData>){
 
     let mut file = File::create("report.txt").unwrap();
     serde_json::to_writer(file, &map).unwrap();
+
 
 }
 /*
