@@ -2,11 +2,13 @@ mod args;
 
 use std::{env, thread};
 use std::collections::HashMap;
+use std::io::BufRead;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 use args::InputArgs;
 use clap::Parser;
 use pcap::Device;
+use indicatif::ProgressBar;
 
 
 fn main() {
@@ -24,8 +26,10 @@ fn main() {
 
     let mut pause = Arc::new(Mutex::new(false));
     let mut pause_copy= pause.clone();
+    let mut pause_copy2= pause.clone();
     let mut end = Arc::new(Mutex::new(false));
     let mut end_copy= end.clone();
+    let mut end_copy2= end.clone();
 
 
     /*nel thread principale ci deve essere una sorta di loop che aggiorna i parametri presi dal terminale
@@ -75,18 +79,37 @@ fn main() {
         }
     });
 
+    let th2 = thread::spawn(move ||{
+        loop {
+            let mut e = end_copy2.clone();
+            let mut p = pause_copy2.clone();
+                let pb = ProgressBar::new(8);
+                for _ in 0..8 {
+                    if *e.lock().unwrap() {break}
+                    if ! (*p.lock().unwrap()) {
+                        pb.inc(1);
+                        thread::sleep(Duration::from_secs(1));
+                    }
+                }
+                pb.finish_and_clear();
+                if *e.lock().unwrap() {break}
+        }
+    });
+
     loop {
         let mut end_copy= end.clone();
         let mut line = String::new();
         println!("Enter your command :");
-        let b1 = std::io::stdin().read_line(&mut line).unwrap();
+        let mut std_lock = std::io::stdin();
+        std_lock..read_line(&mut line).unwrap();
+        //let b1 = std::io::stdin().read_line(&mut line).unwrap();
         if line.contains("end") {
             *end.lock().unwrap() = true;
             println!("goodbye");
         }
         if line.contains("pause") {
             *pause.lock().unwrap() = true;
-            println!("CAPTURE IS WAITING FOR REUMING");
+            println!("CAPTURE IS WAITING FOR RESUMING");
         }
         if line.contains("resume") {
             *pause.lock().unwrap() = false;
@@ -98,9 +121,16 @@ fn main() {
 
     match th1.join() {
         //non serve a nulla, solo per controllare che sia tutto ok
-        Ok(res) => { println!("ok join") },
+        Ok(res) => { println!("ok join thread sniff") },
         Err(err) => { println!("errore join") },
     }
+
+    match th2.join() {
+        //non serve a nulla, solo per controllare che sia tutto ok
+        Ok(res) => { println!("ok join thread print") },
+        Err(err) => { println!("errore print") },
+    }
+
 
 }
 
