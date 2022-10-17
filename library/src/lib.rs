@@ -66,7 +66,7 @@ pub fn capture_packet (selected_device : Device, print_report:bool, mut map: Has
             //println!("{:?}", custom_packet);
             let mut key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port);
             let key_string = serde_json::to_string(&key1).unwrap();
-            let mut key2 = CustomKey::new(custom_packet.dest_addr, custom_packet.dest_port);
+            let mut key2 = CustomKey::new(custom_packet.dest_addr, custom_packet.dest_port); //va aggiunta o no??
             let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list);
 
             let r = map.get(&key_string);
@@ -289,13 +289,76 @@ pub fn progress_bar (){
 
 
 
-pub fn write_to_file(map : HashMap<String, CustomData>){
+
+pub fn write_to_file(mut map : HashMap<String, CustomData>){
+
+    //fake filters
+    let min_len = 100 as u32;
+    let port = "443".to_string();
+    let protocol = "UDP".to_string();
 
     let mut file = File::create("report.txt").unwrap();
-    serde_json::to_writer(file, &map).unwrap();
 
+    //filter the hashmap
+    let mut map_to_print : HashMap<String, CustomData> = HashMap::new();
+    //map_to_print = filter_len(map,min_len );
+    //map_to_print = filter_protocol(map_to_print, protocol);
+    map_to_print= filter_address(map, port);
+
+    //print on a file. Must be converted in a csv file
+    serde_json::to_writer(file, &map_to_print).unwrap();
 
 }
+
+pub fn filter_len(mut map: HashMap<String,CustomData>, len_minimum: u32) -> HashMap<String, CustomData>{
+    let mut filtered_map : HashMap<String,CustomData> = HashMap::new();
+    for raw in map {
+        let keyy = raw.0;
+        let vall = raw.1;
+        if vall.len > len_minimum{
+            filtered_map.insert(keyy,vall);
+        }
+    }
+    return filtered_map
+}
+
+//filter based on ip address or port number
+pub fn filter_address(mut map: HashMap<String,CustomData>, address_required: String) -> HashMap<String, CustomData>{
+    let mut filtered_map : HashMap<String,CustomData> = HashMap::new();
+    for raw in map {
+        let keyy = raw.0;
+        let vall = raw.1;
+        if keyy.as_str().contains(address_required.clone().as_str()){
+            filtered_map.insert(keyy,vall);
+        }
+    }
+    return filtered_map
+}
+
+//filter based on a protocol name
+pub fn filter_protocol(mut map: HashMap<String,CustomData>, protocol_required: String) -> HashMap<String, CustomData>{
+    let mut filtered_map : HashMap<String,CustomData> = HashMap::new();
+    for raw in map {
+        let mut insert = false;
+        let keyy = raw.0;
+        let vall = raw.1.clone();
+        let mut protocols = vall.protocols.clone();
+        for p in protocols {
+            if  p.to_lowercase().eq(&protocol_required.clone().to_lowercase()) {
+                insert= true;
+            }
+        }
+        if insert {
+            filtered_map.insert(keyy,vall);
+        }
+    }
+    return filtered_map
+}
+
+//filter
+
+
+
 /*
 use log::{info, warn};
 pub fn logging (){
