@@ -42,11 +42,13 @@ impl  CustomKey {
 pub struct CustomData {
     pub len : u32,
     pub protocols : Vec<String>,
+    pub start_timestamp: String,
+    pub end_timestamp:String,
 }
 
 impl  CustomData {
-    pub fn new (len : u32, protocols : Vec<String>,) -> CustomData{
-        CustomData {len, protocols}
+    pub fn new (len : u32, protocols : Vec<String>, now : String) -> CustomData{
+        CustomData {len, protocols, start_timestamp: String::new(), end_timestamp: String::new()}
     }
 }
 

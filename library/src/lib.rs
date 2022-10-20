@@ -13,7 +13,8 @@ use pdu::Tcp::Raw;
 use crate::structures::{CustomPacket, CustomKey, CustomData};
 use serde::{Serialize, Deserialize};
 use dns_parser::{Packet};
-use std::time::{Duration, SystemTime};
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime};
+
 
 //Stampa a video la lista di ttutti i network adapter e ritorna al main tale lista.
 pub fn print_all_devices (list : Vec<Device>){
@@ -67,7 +68,8 @@ pub fn capture_packet (selected_device : Device, print_report:bool, mut map: Has
             let mut key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port);
             let key_string = serde_json::to_string(&key1).unwrap();
             let mut key2 = CustomKey::new(custom_packet.dest_addr, custom_packet.dest_port); //va aggiunta o no??
-            let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list);
+            let timestamp = now_date_hour();
+            let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list, timestamp.clone());
 
             let r = map.get(&key_string);
 
@@ -75,13 +77,23 @@ pub fn capture_packet (selected_device : Device, print_report:bool, mut map: Has
                 Some(d) => {
                     let mut old_value = d.clone();
                     old_value.len = old_value.len + custom_data.len;
-                    for protocol in old_value.protocols {
-                        if !custom_data.protocols.contains(&protocol) {
-                            custom_data.protocols.push(protocol)
+                    let timestamp2 = now_date_hour();
+                    old_value.end_timestamp=timestamp2;
+                    /*for protocol in custom_data.protocols {
+                        if !old_value.protocols.contains(&protocol) {
+                            println!("new protocol");
+                            old_value.protocols.push(protocol)
                         }
-                    }
+                    }*/
+                    old_value.protocols= custom_data.protocols;
+                    map.insert(key_string, old_value);
                 }
-                None => { map.insert(key_string, custom_data); }
+                None => {
+                    let timestamp_start = now_date_hour();
+                    custom_data.start_timestamp = timestamp_start.clone();
+                    custom_data.end_timestamp =timestamp_start;
+                    map.insert(key_string, custom_data);
+                }
             }
             if print_report {
                 write_to_file(map.clone());
@@ -138,7 +150,6 @@ pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket
                                     Raw(payload)=> {match Packet::parse(payload) {
                                         Ok( dns_packet) =>{
                                             custom_packet.prtocols_list.push("DNS".to_string());
-                                            //println!("{:?}",dns_packet);
                                         }
                                         Err(e)=>{/*println!("Packet is not DNS:{:?}",e)*/}
                                     }}
@@ -159,7 +170,6 @@ pub fn parse_level2_packet(packet_data: &[u8], custom_packet: & mut CustomPacket
                                     Udp::Raw(payloadd)=> {match Packet::parse(payloadd) {
                                         Ok( dns_packet) =>{
                                             custom_packet.prtocols_list.push("DNS".to_string());
-                                            //println!("{:?}",dns_packet);
                                         }
                                         Err(e)=>{/*println!("Packet is not DNS:{:?}",e)*/}
                                     }}
@@ -303,8 +313,8 @@ pub fn write_to_file(mut map : HashMap<String, CustomData>){
     let mut map_to_print : HashMap<String, CustomData> = HashMap::new();
     //map_to_print = filter_len(map,min_len );
     //map_to_print = filter_protocol(map_to_print, protocol);
-    map_to_print= filter_address(map, port);
-
+    //map_to_print= filter_address(map, port);
+    map_to_print=map;
     //print on a file. Must be converted in a csv file
     serde_json::to_writer(file, &map_to_print).unwrap();
 
@@ -355,7 +365,14 @@ pub fn filter_protocol(mut map: HashMap<String,CustomData>, protocol_required: S
     return filtered_map
 }
 
-//filter
+pub fn now_date_hour () -> String{
+    let local1: DateTime<Local> = Local::now(); // e.g. `2014-11-28T21:45:59.324310806+09:00`
+    let mut formatted_date = format!("{}", local1.date().format("%d/%m/%Y"));
+    let formatted_hour = format!("{}", local1.time().format("%H:%M:%S%.3f"));
+    formatted_date.push_str(" - ");
+    formatted_date.push_str(formatted_hour.as_str());
+    formatted_date
+}
 
 
 

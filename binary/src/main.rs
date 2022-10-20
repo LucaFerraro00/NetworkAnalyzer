@@ -79,6 +79,7 @@ fn main() {
         }
     });
 
+    /*
     let th2 = thread::spawn(move ||{
         loop {
             let mut e = end_copy2.clone();
@@ -94,14 +95,14 @@ fn main() {
                 pb.finish_and_clear();
                 if *e.lock().unwrap() {break}
         }
-    });
+    });*/
 
     loop {
         let mut end_copy= end.clone();
         let mut line = String::new();
         println!("Enter your command :");
         let mut std_lock = std::io::stdin();
-        std_lock..read_line(&mut line).unwrap();
+        std_lock.read_line(&mut line).unwrap();
         //let b1 = std::io::stdin().read_line(&mut line).unwrap();
         if line.contains("end") {
             *end.lock().unwrap() = true;
@@ -125,11 +126,12 @@ fn main() {
         Err(err) => { println!("errore join") },
     }
 
+    /*
     match th2.join() {
         //non serve a nulla, solo per controllare che sia tutto ok
         Ok(res) => { println!("ok join thread print") },
         Err(err) => { println!("errore print") },
-    }
+    }*/
 
 
 }
