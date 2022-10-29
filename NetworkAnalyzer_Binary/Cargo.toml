@@ -1,11 +1,19 @@
 [package]
-name = "library"
+name = "NetworkAnalyzer"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+
+
+[[bin]]
+name = "mybin"
+path = "src/main.rs"
+
+
 [dependencies]
+network_analyzer_lib = {path="../NetworkAnalyzer_Library"} #the name must be equal to the name of the package in cargo.toml of library
 pcap = "0.10.1"
 indicatif = "0.17.1" #si può usare??
 env_logger = "0.9.0"
@@ -18,5 +26,4 @@ dns-parser = "0.8.0"
 # but you may be using a different one.
 serde_json = "1.0"
 chrono = "0.4"
-colored = "2"
 

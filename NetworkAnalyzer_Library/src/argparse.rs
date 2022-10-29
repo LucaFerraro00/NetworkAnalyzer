@@ -1,6 +1,9 @@
+//! Manage and parse CLI parameters
+
 use clap::{Arg, Command, ArgMatches};
 use colored::*;
 
+///Collect the cli parameters in to the struct clap::parser::ArgMatches
 pub fn initialize_cli_parser() -> ArgMatches {
     let parser = Command::new("Network Sniffer")
         .arg(Arg::new("nic_id").help("The target network interface card to be user").required(true))
@@ -45,6 +48,7 @@ pub fn initialize_cli_parser() -> ArgMatches {
     }*/
 
 #[derive(Debug)]
+///This structure aims to conatin all the parameters that can be provided by the user through CLI
 pub struct ArgsParameters {
     pub nic_id : u64,
     pub time_interval : u64,
@@ -81,6 +85,7 @@ impl ArgsParameters {
     }
 }
 
+///Take the ArgMatches struct and trasforms it into a ArgsParameters struct which is more handleable
 pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
 
     let mut nic_id = 999;
@@ -125,7 +130,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
     ArgsParameters::new(nic_id, time_interval, file_name,address_set, byte_set, protocol_set, address_filter, byte_threshold, protocol_name )
 }
 
-
+///Print "Network Analyzer" in a cool way in to the user terminal
 pub fn print_title() {
     let title =
         " _  _       _                       _                    _   __   __           \n\

@@ -1,23 +1,11 @@
 [package]
-name = "NetworkAnalyzer"
+name = "network_analyzer_lib"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-
-#[lib]
-#name= "mylib"
-#path= "../library/src/lib.rs"
-
-
-[[bin]]
-name = "mybin"
-path = "src/main.rs"
-
-
 [dependencies]
-library = {path="../library"}
 pcap = "0.10.1"
 indicatif = "0.17.1" #si può usare??
 env_logger = "0.9.0"
@@ -30,4 +18,5 @@ dns-parser = "0.8.0"
 # but you may be using a different one.
 serde_json = "1.0"
 chrono = "0.4"
+colored = "2"
 

@@ -1,15 +1,13 @@
-mod args;
 
 use std::{env, thread};
 use std::collections::HashMap;
 use std::io::BufRead;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
-use args::InputArgs;
 use clap::Parser;
 use pcap::Device;
 use indicatif::ProgressBar;
-use library::{network_features, structures, argparse};
+use network_analyzer_lib::{network_features, structures, argparse};
 
 
 fn main() {

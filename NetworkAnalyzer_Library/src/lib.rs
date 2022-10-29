@@ -1,3 +1,9 @@
+//! network_analyzer_lib aims at providing the features to intercept incoming and outgoing traffic
+//! through the network interfaces of a computer.
+//! This crate contains also the functions to interact with an user through command line parameters and to print a report of the
+//! sniffed traffic into a file.
+//!
+
 pub mod structures;
 pub mod argparse;
 

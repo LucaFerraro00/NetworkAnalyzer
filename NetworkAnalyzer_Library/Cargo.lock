@@ -385,23 +385,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "library"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "clap",
- "colored",
- "dns-parser",
- "env_logger",
- "indicatif",
- "pcap",
- "pdu",
- "rpcap",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "link-cplusplus"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -424,6 +407,23 @@ name = "memchr"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
+
+[[package]]
+name = "network_analyzer_lib"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "colored",
+ "dns-parser",
+ "env_logger",
+ "indicatif",
+ "pcap",
+ "pdu",
+ "rpcap",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "num-integer"
