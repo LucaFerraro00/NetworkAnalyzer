@@ -1,14 +1,13 @@
 
 use std::{env, thread};
 use std::collections::HashMap;
-use std::io::BufRead;
+use std::io::{BufRead, Write};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 use clap::Parser;
 use pcap::Device;
 use indicatif::ProgressBar;
 use network_analyzer_lib::{network_features, structures, argparse};
-
 
 fn main() {
 
@@ -19,7 +18,7 @@ fn main() {
 
     println!("THE CAPTURE IS GOING ON....");
     println!("digit 'pause' to temporaly stop the sniffing");
-    println!("digit 'resume' to resum the sniffing");
+    println!("digit 'resume' to resume the sniffing");
     println!("digit 'end' to finish the sniffing");
 
     let mut pause = Arc::new(Mutex::new(false));
@@ -126,6 +125,5 @@ fn main() {
         Ok(res) => { println!("ok join thread print") },
         Err(err) => { println!("errore print") },
     }*/
-
 
 }

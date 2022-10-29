@@ -6,7 +6,7 @@
 
 pub mod structures;
 pub mod argparse;
-
+use csv::Writer;
 
 pub mod network_features {
     use std::collections::HashMap;
@@ -49,15 +49,6 @@ pub mod network_features {
     pub fn check_device_available(selected: i32, list: Vec<Device>) -> bool {
         selected < list.len() as i32
     }
-
-    pub fn create_file(file_name: String) -> File {
-        let mut path = "results/".to_string();
-        path.push_str(file_name.as_str());
-        println!("{}", path);
-        let mut f = File::create(path).unwrap();
-        return f;
-    }
-
 
     pub fn capture_packet(selected_device: Device, file_name : String, print_report: bool, mut map: HashMap<String, CustomData>) -> HashMap<String, CustomData> {
         //let mut cap = selected_device.open().unwrap();
@@ -311,9 +302,11 @@ pub mod network_features {
         let port = "443".to_string();
         let protocol = "UDP".to_string();
         let mut path_name = file_name.clone();
-        path_name.push_str(".txt");
+        //path_name.push_str(".txt");
+        path_name.push_str(".csv");
         let path_file = Path::new(&path_name);
-        let mut file = File::create(path_file).unwrap();
+        //let mut file = File::create(path_file).unwrap();
+        let mut file = csv::Writer::from_path(path_file).unwrap();
 
         //filter the hashmap
         let mut map_to_print: HashMap<String, CustomData> = HashMap::new();
@@ -322,7 +315,8 @@ pub mod network_features {
         //map_to_print= filter_address(map, port);
         map_to_print = map;
         //print on a file. Must be converted in a csv file
-        serde_json::to_writer(file, &map_to_print).unwrap();
+        //serde_json::to_writer(file, &map_to_print).unwrap();
+        file.write_record(&["c", "i", "a", "o"]);
     }
 
     pub fn filter_len(mut map: HashMap<String, CustomData>, len_minimum: u32) -> HashMap<String, CustomData> {
