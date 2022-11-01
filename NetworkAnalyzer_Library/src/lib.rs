@@ -7,6 +7,7 @@
 pub mod structures;
 pub mod argparse;
 use csv::Writer;
+use serde::Serialize;
 
 pub mod network_features {
     use std::collections::HashMap;
@@ -57,7 +58,7 @@ pub mod network_features {
 
 
         while let Ok(packet) = cap.next_packet() {
-            //println!("received packet!", );
+            //println!("{:?}",packet);
             let mut custom_packet = CustomPacket::new(
                 packet.header.len
             );
@@ -94,7 +95,7 @@ pub mod network_features {
                 }
             }
             if print_report {
-                write_to_file(map.clone(),file_name );
+                write_to_file(map.clone(),file_name);
             }
             break
         }
@@ -316,7 +317,18 @@ pub mod network_features {
         map_to_print = map;
         //print on a file. Must be converted in a csv file
         //serde_json::to_writer(file, &map_to_print).unwrap();
-        file.write_record(&["c", "i", "a", "o"]);
+        file.write_record(&["ip address/Port", "    Length","    Protocols", "   Start Time", "  End Time"]);
+        /*file.serialize(HashMap<String,CustomData> {
+                String: map_to_print.keys(),
+                CustomData: map_to_print.get(map_to_print.keys())
+        });*/
+        //file.serialize(map_to_print.keys());
+        for key in map_to_print.keys() {
+            file.write_record(&[key]);
+            file.serialize(map_to_print.get(key));
+            file.write_record(&["\n"]);
+        }
+
     }
 
     pub fn filter_len(mut map: HashMap<String, CustomData>, len_minimum: u32) -> HashMap<String, CustomData> {
