@@ -51,7 +51,7 @@ fn main() {
         let mut print_report = false;
 
 
-        let mut map : HashMap<String, structures::CustomData> = HashMap::new();
+        let mut map : HashMap<structures::CustomKey, structures::CustomData> = HashMap::new();
 
         loop {
             let mut e = end_copy.clone();

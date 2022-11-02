@@ -51,7 +51,7 @@ pub mod network_features {
         selected < list.len() as i32
     }
 
-    pub fn capture_packet(selected_device: Device, file_name : String, print_report: bool, mut map: HashMap<String, CustomData>) -> HashMap<String, CustomData> {
+    pub fn capture_packet(selected_device: Device, file_name : String, print_report: bool, mut map: HashMap<CustomKey, CustomData>) -> HashMap<CustomKey, CustomData> {
         //let mut cap = selected_device.open().unwrap();
         let mut cap = Capture::from_device(selected_device).unwrap().open().unwrap();
         //println!("Data link: {:?}",cap.get_datalink());
@@ -70,7 +70,7 @@ pub mod network_features {
             let timestamp = now_date_hour();
             let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list, timestamp.clone());
 
-            let r = map.get(&key_string);
+            let r = map.get(&key1);//let r = map.get(&key_string);
 
             match r {
                 Some(d) => {
@@ -85,13 +85,13 @@ pub mod network_features {
                         }
                     }*/
                     old_value.protocols = custom_data.protocols;
-                    map.insert(key_string, old_value);
+                    map.insert(key1, old_value);
                 }
                 None => {
                     let timestamp_start = now_date_hour();
                     custom_data.start_timestamp = timestamp_start.clone();
                     custom_data.end_timestamp = timestamp_start;
-                    map.insert(key_string, custom_data);
+                    map.insert(key1, custom_data);
                 }
             }
             if print_report {
@@ -296,7 +296,7 @@ pub mod network_features {
     }
 
 
-    pub fn write_to_file(mut map: HashMap<String, CustomData>, file_name: String) {
+    pub fn write_to_file(mut map: HashMap<CustomKey, CustomData>, file_name: String) {
 
         //fake filters
         let min_len = 100 as u32;
@@ -310,7 +310,7 @@ pub mod network_features {
         let mut file = csv::Writer::from_path(path_file).unwrap();
 
         //filter the hashmap
-        let mut map_to_print: HashMap<String, CustomData> = HashMap::new();
+        let mut map_to_print: HashMap<CustomKey, CustomData> = HashMap::new();
         //map_to_print = filter_len(map,min_len );
         //map_to_print = filter_protocol(map_to_print, protocol);
         //map_to_print= filter_address(map, port);
@@ -324,7 +324,7 @@ pub mod network_features {
         });*/
         //file.serialize(map_to_print.keys());
         for key in map_to_print.keys() {
-            file.write_record(&[key]);
+            file.serialize(key);
             file.serialize(map_to_print.get(key));
             file.write_record(&["\n"]);
         }
