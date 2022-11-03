@@ -318,15 +318,28 @@ pub mod network_features {
         //print on a file. Must be converted in a csv file
         //serde_json::to_writer(file, &map_to_print).unwrap();
         file.write_record(&["ip address/Port", "    Length","    Protocols", "   Start Time", "  End Time"]);
-        /*file.serialize(HashMap<String,CustomData> {
-                String: map_to_print.keys(),
-                CustomData: map_to_print.get(map_to_print.keys())
-        });*/
-        //file.serialize(map_to_print.keys());
+        #[derive (Serialize)]
+        struct Recor {
+            ip: Vec<u8>,
+            port : u16,
+            len : u32,
+            protocols : Vec<String>,
+            start_timestamp: String,
+            end_timestamp:String,
+        }
+
         for key in map_to_print.keys() {
-            file.serialize(key);
-            file.serialize(map_to_print.get(key));
-            file.write_record(&["\n"]);
+            //file.serialize(key);
+            //file.serialize(map_to_print.get(key));
+            //file.write_record(&["\n"]);
+            file.serialize(Recor {
+                ip: key.ip.clone(),
+                port: key.port.clone(),
+                len: map_to_print.get(key).unwrap().len.clone(),
+                protocols: map_to_print.get(key).unwrap().protocols.clone(),
+                start_timestamp: map_to_print.get(key).unwrap().start_timestamp.clone(),
+                end_timestamp: map_to_print.get(key).unwrap().end_timestamp.clone()
+            });
         }
 
     }
