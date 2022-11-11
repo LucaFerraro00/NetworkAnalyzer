@@ -305,9 +305,12 @@ pub mod network_features {
         let min_len = 100 as u32;
         let port = "443".to_string();
         let protocol = "UDP".to_string();
-        let mut path_name = file_name.clone();
+        let mut f_name = file_name.clone();
         //path_name.push_str(".txt");
-        path_name.push_str(".csv");
+        f_name.push_str(".csv");
+        let mut path_name = "results/".to_string();
+        path_name.push_str(&*f_name);
+        println!("{:?}",path_name);
         let path_file = Path::new(&path_name);
         //let mut file = File::create(path_file).unwrap();
         let mut file = csv::Writer::from_path(path_file).unwrap();
