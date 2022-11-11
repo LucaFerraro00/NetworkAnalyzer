@@ -1,5 +1,4 @@
 # Project exclude paths
-/binary/target/
-/library/target/debug/
-/library/target/.rustc_info
-/library/target/.rustdoc_fingerprint
+/.idea/
+/NetworkAnalyzer_Binary/target
+/NetworkAnalyzer_Library/target/*

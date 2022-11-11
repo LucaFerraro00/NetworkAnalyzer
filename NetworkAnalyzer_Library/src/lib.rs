@@ -10,6 +10,7 @@ use csv::Writer;
 use serde::Serialize;
 
 pub mod network_features {
+    //!Contains all the functions to capture, parse and store the informations sniffed in network packets
     use std::collections::HashMap;
     use std::env::Args;
     use std::fs::File;
@@ -26,6 +27,7 @@ pub mod network_features {
     use chrono::{DateTime, Local, NaiveDate, NaiveDateTime};
     //Stampa a video la lista di ttutti i network adapter e ritorna al main tale lista.
 
+    ///Print the list of the available network adapters of PC
     pub fn print_all_devices(list: Vec<Device>) {
         let mut i = 1;
         println!("The available devices are:");
@@ -47,11 +49,19 @@ pub mod network_features {
         return line.trim().to_string();
     }
 
+    ///Check if the selected network adapter exists and is available.
+    /// Return true if avaialable, otherwise false
     pub fn check_device_available(selected: i32, list: Vec<Device>) -> bool {
         selected < list.len() as i32
     }
 
+    ///Start the capture session using pcap features.
+    /// When a packet is received it is passed to function parser_level2_packet which cares about parsing packets byte.
+    ///The function capture_packet also updates the HashMap<CustomKey, CustomData> which contains the informations of the captured packets.
+    ///Furthermore this functions check the interval previosuly provided by the user. If the interval is elapsed capture_packet calls write_to_file function to store to the file the updated informations about ntwork analisys
     pub fn capture_packet(selected_device: Device, file_name : String, print_report: bool, mut map: HashMap<CustomKey, CustomData>) -> HashMap<CustomKey, CustomData> {
+
+
         //let mut cap = selected_device.open().unwrap();
         let mut cap = Capture::from_device(selected_device).unwrap().open().unwrap();
         //println!("Data link: {:?}",cap.get_datalink());
@@ -102,7 +112,10 @@ pub mod network_features {
         return map;
     }
 
-
+    ///This function exploits the features provide by pdu library.
+    /// It takes as input a stream of byte &[u8] and parse it. Starts from the network layer pdu and then goes deep up to transport layer.
+    /// At each level of the stack the struct CustomPacket is updated with the information spotted (protocol name, protocol, address).
+    /// When pdu of level 4 is reached the dns_parser external library is used to check if packet is carrying DNS protocol. Finally the updated struct CustomPacket is returned
     pub fn parse_level2_packet(packet_data: &[u8], custom_packet: &mut CustomPacket) {
         // parse a layer 2 (Ethernet) packet using EthernetPdu::new()
 
@@ -285,16 +298,6 @@ pub mod network_features {
     }
 
 
-    pub fn progress_bar() {
-        let pb = indicatif::ProgressBar::new(100);
-        for i in 0..100 {
-            std::thread::sleep(std::time::Duration::from_secs(2));
-            pb.println(format!("[+] finished #{}", i));
-            pb.inc(1);
-        }
-        pb.finish_with_message("done");
-    }
-
 
     pub fn write_to_file(mut map: HashMap<CustomKey, CustomData>, file_name: String) {
 
@@ -344,6 +347,9 @@ pub mod network_features {
 
     }
 
+
+    ///Receive the HashMap<String, CustomData> and the filter on the minimum byte threshold provided by the user. Drops all the rows
+    ///of th HashMamp with cumulative byte lenght lower than threshold
     pub fn filter_len(mut map: HashMap<String, CustomData>, len_minimum: u32) -> HashMap<String, CustomData> {
         let mut filtered_map: HashMap<String, CustomData> = HashMap::new();
         for raw in map {
@@ -356,7 +362,8 @@ pub mod network_features {
         return filtered_map
     }
 
-    //filter based on ip address or port number
+    ///Receive the HashMap<String, CustomData> and the filter on the required address/port provided by the user. Drops all the rows
+    ///of the HashMamp which don't contains that address/filter
     pub fn filter_address(mut map: HashMap<String, CustomData>, address_required: String) -> HashMap<String, CustomData> {
         let mut filtered_map: HashMap<String, CustomData> = HashMap::new();
         for raw in map {
@@ -369,7 +376,8 @@ pub mod network_features {
         return filtered_map
     }
 
-    //filter based on a protocol name
+    ///Receive the HashMap<String, CustomData> and the protocol name filter provided by the user. Drops all the rows
+    ///of th HashMamp which don't contains the specifie protocol
     pub fn filter_protocol(mut map: HashMap<String, CustomData>, protocol_required: String) -> HashMap<String, CustomData> {
         let mut filtered_map: HashMap<String, CustomData> = HashMap::new();
         for raw in map {
@@ -389,6 +397,11 @@ pub mod network_features {
         return filtered_map
     }
 
+    ///Exploits the chrono library's features and return actual date an hour in formatted format:
+    /// day/month/year - hours:minutes:seconds
+    ///
+    /// For example: "28/10/2022 - 18:31:34.286"
+    /// It is used to store initial and final timestamp of the captured packet.
     pub fn now_date_hour() -> String {
         let local1: DateTime<Local> = Local::now(); // e.g. `2014-11-28T21:45:59.324310806+09:00`
         let mut formatted_date = format!("{}", local1.date().format("%d/%m/%Y"));
