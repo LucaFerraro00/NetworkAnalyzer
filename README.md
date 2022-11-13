@@ -26,10 +26,8 @@ The application can be run through
 
 #
 ## Documentation
-The documantation of the library is available [here](NetworkAnalyzer_Library/target/doc/network_analyzer_lib/index.html).
 
-
-The documenation can also be opened running the command:
+The documenation can be opened running the command:
 
 
  `cargo doc --open`
