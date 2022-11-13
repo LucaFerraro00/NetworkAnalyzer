@@ -15,11 +15,7 @@ fn main() {
     let mut matched_arguments = argparse::initialize_cli_parser();
     let mut parameters = argparse::matches_arguments(matched_arguments);
     argparse::print_title();
-
-    println!("THE CAPTURE IS GOING ON....");
-    println!("digit 'pause' to temporaly stop the sniffing");
-    println!("digit 'resume' to resume the sniffing");
-    println!("digit 'end' to finish the sniffing");
+    network_features::print_menu();
 
     let mut pause = Arc::new(Mutex::new(false));
     let mut pause_copy= pause.clone();
@@ -27,7 +23,6 @@ fn main() {
     let mut end = Arc::new(Mutex::new(false));
     let mut end_copy= end.clone();
     let mut end_copy2= end.clone();
-
 
     let th1 = thread::spawn(move||{
 
