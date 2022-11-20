@@ -501,7 +501,7 @@ pub mod network_features {
         formatted_date
     }
 
-    ///Print the basic menu on the terminal
+    ///Print the basic menu of available commands on the terminal
     pub fn print_menu() {
         println!("THE CAPTURE IS GOING ON....");
         println!("digit 'pause' to temporaly stop the sniffing");
