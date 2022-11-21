@@ -112,6 +112,10 @@ pub mod network_features {
     use serde::{Serialize, Deserialize};
     use dns_parser::{Packet};
     use chrono::{DateTime, Local, NaiveDate, NaiveDateTime};
+    use serde_json::Value;
+    use std::string::String;
+    use csv::{Writer,WriterBuilder};
+    use std::error::Error;
     //Stampa a video la lista di ttutti i network adapter e ritorna al main tale lista.
 
     ///Print the list of the available network adapters of PC
@@ -386,7 +390,7 @@ pub mod network_features {
 
 
 
-    pub fn write_to_file(mut map: HashMap<CustomKey, CustomData>, file_name: String) {
+    pub fn write_to_file(mut map: HashMap<CustomKey, CustomData>, file_name: String)  {
 
         //fake filters
         let min_len = 100 as u32;
@@ -397,11 +401,9 @@ pub mod network_features {
         f_name.push_str(".csv");
         let mut path_name = "results/".to_string();
         path_name.push_str(&*f_name);
-        println!("{:?}",path_name);
         let path_file = Path::new(&path_name);
         //let mut file = File::create(path_file).unwrap();
         let mut file = csv::Writer::from_path(path_file).unwrap();
-
         //filter the hashmap
         let mut map_to_print: HashMap<CustomKey, CustomData> = HashMap::new();
         //map_to_print = filter_len(map,min_len );
@@ -412,29 +414,47 @@ pub mod network_features {
         //serde_json::to_writer(file, &map_to_print).unwrap();
         file.write_record(&["ip address/Port", "    Length","    Protocols", "   Start Time", "  End Time"]);
         #[derive (Serialize)]
-        struct Recor {
-            ip: Vec<u8>,
-            port : u16,
-            len : u32,
-            protocols : Vec<String>,
+        struct Row {
+            ip_port : String,
+            len : String,
+            protocols : String,
             start_timestamp: String,
             end_timestamp:String,
         }
 
         for key in map_to_print.keys() {
-            //file.serialize(key);
-            //file.serialize(map_to_print.get(key));
-            //file.write_record(&["\n"]);
-            file.serialize(Recor {
-                ip: key.ip.clone(),
-                port: key.port.clone(),
-                len: map_to_print.get(key).unwrap().len.clone(),
-                protocols: map_to_print.get(key).unwrap().protocols.clone(),
+            let formatted_key=format_key(key);
+            /*file.serialize(formatted_key);
+            file.serialize(map_to_print.get(key));
+            file.write_record(&[""]);*/
+            let mut wtr = WriterBuilder::new()
+                .has_headers(false)
+                .from_writer(vec![]);
+            wtr.serialize(Row {
+                ip_port : formatted_key,
+                len: map_to_print.get(key).unwrap().len.clone().to_string(),
+                protocols: map_to_print.get(key).unwrap().protocols.clone().join("-"),
                 start_timestamp: map_to_print.get(key).unwrap().start_timestamp.clone(),
                 end_timestamp: map_to_print.get(key).unwrap().end_timestamp.clone()
-            });
+            }).unwrap();
+            let row_string =String::from_utf8(wtr.into_inner().unwrap()).unwrap();
+            //println!("{}",row_string);
+            file.write_record(&[row_string]);
         }
+    }
 
+    pub fn format_key( k : &CustomKey) -> String{
+        let mut ip = k.ip.clone();
+        let mut s = String::new();
+        for n in ip{
+            s.push_str(n.to_string().as_str());
+            s.push('.');
+        }
+        s.pop();
+        let port = k.port.clone();
+        s.push('/');
+        s.push_str(port.to_string().as_str());
+        s
     }
 
 
