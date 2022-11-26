@@ -2,6 +2,9 @@
 
 use clap::{Arg, Command, ArgMatches};
 use colored::*;
+use crate::network_features::print_all_devices;
+use pcap::Device;
+
 
 ///Collect the cli parameters in to the struct clap::parser::ArgMatches
 pub fn initialize_cli_parser() -> ArgMatches {
@@ -9,6 +12,9 @@ pub fn initialize_cli_parser() -> ArgMatches {
         .arg(Arg::new("nic_id").help("The target network interface card to be user").required(true))
         .arg(Arg::new("file_name").help("The output file where a complete report should be provided").required(true))
         .arg(Arg::new("time_interval").help("Define the time interval after wihich the report is updated").required(true))
+        .arg(Arg::new("byte_threshold").short('b').long("byte_threshold").value_name("Threshold").help("Drop all the data with cumulative number of bytes below the inserted threshold"))
+        .arg(Arg::new("protocol_filter").short('p').long("protocol_filter").value_name("Protocol name").help("Keep only data that contains selected protocol"))
+        .arg(Arg::new("port_filter").short('s').long("port_filter").value_name("port").help("Keep only data that contains selected port"))
         .arg(Arg::new("list").short('l').long("list")
             .help("It provide a list of all possible interfaces available")
             .conflicts_with_all(&["nic_id", "file_name", "time_interval"]));
@@ -54,9 +60,11 @@ pub struct ArgsParameters {
     pub time_interval : u64,
     pub file_name: String,
     pub filter_address_set: bool,
+    pub filter_port_set : bool,
     pub filter_bytes_set : bool,
     pub filter_protocols_set: bool,
     pub address : String,
+    pub port : u16,
     pub bytes_threshold : u64,
     pub protocol_name : String,
 }
@@ -66,9 +74,11 @@ impl ArgsParameters {
                 time_interval : u64,
                 file_name: String,
                 filter_address_set: bool,
+                filter_port_set : bool,
                 filter_bytes_set : bool,
                 filter_protocols_set: bool,
                 address : String,
+                port : u16,
                 bytes_threshold : u64,
                 protocol_name : String,) -> ArgsParameters
     {
@@ -77,9 +87,11 @@ impl ArgsParameters {
             time_interval,
             file_name,
             filter_address_set,
+            filter_port_set,
             filter_bytes_set ,
             filter_protocols_set,
             address,
+            port,
             bytes_threshold,
             protocol_name}
     }
@@ -108,26 +120,42 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
 
     let mut address_set = false;
     let mut address_filter=String::new();
-    /*if let Some(add) = matches.get_one::<String>("address") {
+    /*
+    if let Some(add) = matches.get_one::<String>("filter_address") {
         address_set= true;
         address_filter= (*add.clone().to_string()).parse().unwrap();
     }*/
 
+    if matches.contains_id("list") {
+        let list = Device::list().unwrap();
+        print_all_devices(list.clone());
+        std::process::exit(0);
+    }
+
     let mut byte_set = false;
     let mut byte_threshold=0 as u64;
-    /*if let Some(byte_t) = matches.get_one::<u64>("byte_threshold") {
+    if let Some(byte_t) = matches.get_one::<String>("byte_threshold") {
         byte_set= true;
-        byte_threshold=*byte_t;
-    }*/
+        let t_number = (*byte_t).parse::<u64>().expect("byte threshold must be a number");
+        byte_threshold=t_number;
+    }
+
+    let mut port_set = false;
+    let mut port_filter=0 as u16;
+    if let Some(port) = matches.get_one::<String>("port_filter") {
+        port_set= true;
+        let p_number = (*port).parse::<u16>().expect("byte threshold must be a number");
+        port_filter=p_number;
+    }
 
     let mut protocol_set = false;
     let mut protocol_name=String::new();
-    /*if let Some(prot) = matches.get_one::<String>("protocols") {
+    if let Some(prot) = matches.get_one::<String>("protocol_filter") {
         protocol_set= true;
-        protocol_name=(*prot.clone().to_string()).parse().unwrap();;
-    }*/
+        protocol_name=(*prot.clone().to_string()).parse().unwrap();
+    }
 
-    ArgsParameters::new(nic_id, time_interval, file_name,address_set, byte_set, protocol_set, address_filter, byte_threshold, protocol_name )
+    ArgsParameters::new(nic_id, time_interval, file_name,address_set, port_set, byte_set, protocol_set, address_filter, port_filter, byte_threshold, protocol_name )
 }
 
 ///Print "Network Analyzer" in a cool way in to the user terminal

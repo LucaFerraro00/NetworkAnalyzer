@@ -1,7 +1,7 @@
 //!Contains all the structures definitions and implementations useful to store information sniffed from the network
 
 
-use serde::{Serialize, Deserialize};
+use serde::{Serialize};
 
 #[derive(Debug, Clone)]
 #[repr(C)] //per far funzionare timeval
@@ -62,7 +62,7 @@ pub struct CustomData {
 }
 
 impl  CustomData {
-    pub fn new (len : u32, protocols : Vec<String>, now : String) -> CustomData{
+    pub fn new (len : u32, protocols : Vec<String>) -> CustomData{
         CustomData {len, protocols, start_timestamp: String::new(), end_timestamp: String::new()}
     }
 }

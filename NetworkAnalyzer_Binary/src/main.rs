@@ -1,28 +1,23 @@
 
-use std::{env, thread};
+use std::{thread};
 use std::collections::HashMap;
-use std::io::{BufRead, Write};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
-use clap::Parser;
 use pcap::Device;
-use indicatif::ProgressBar;
 use network_analyzer_lib::{network_features, structures, argparse};
 
 fn main() {
 
-
-    let mut matched_arguments = argparse::initialize_cli_parser();
-    let mut parameters = argparse::matches_arguments(matched_arguments);
+    let matched_arguments = argparse::initialize_cli_parser();
+    let parameters = argparse::matches_arguments(matched_arguments);
+    println!("{:?}",parameters);
     argparse::print_title();
     network_features::print_menu();
 
-    let mut pause = Arc::new(Mutex::new(false));
-    let mut pause_copy= pause.clone();
-    let mut pause_copy2= pause.clone();
-    let mut end = Arc::new(Mutex::new(false));
-    let mut end_copy= end.clone();
-    let mut end_copy2= end.clone();
+    let pause = Arc::new(Mutex::new(false));
+    let pause_copy= pause.clone();
+    let end = Arc::new(Mutex::new(false));
+    let end_copy= end.clone();
 
     let th1 = thread::spawn(move||{
 
@@ -31,8 +26,9 @@ fn main() {
             true => { network_features::print_all_devices(list.clone())}
             false => { () }
         }*/
-        let mut selected_code = parameters.nic_id;
+        let selected_code = parameters.nic_id;
 
+        /*
         let mut available = network_features::check_device_available( selected_code as i32,list.clone());
         while !available {
             println!("The selected network adapter is not available!");
@@ -40,26 +36,23 @@ fn main() {
             network_features::print_all_devices(list.clone());
             selected_code = network_features::select_device().parse::<u64>().unwrap();
             available = network_features::check_device_available( selected_code as i32, list.clone());
-        }
+        }*/
 
         let mut now = SystemTime::now();
         let mut print_report = false;
-
-
         let mut map : HashMap<structures::CustomKey, structures::CustomData> = HashMap::new();
-
         loop {
-            let mut e = end_copy.clone();
-            let mut p = pause_copy.clone();
+            let e = end_copy.clone();
+            let p = pause_copy.clone();
             let selected_device = list[(selected_code as usize) -1].clone();
             if *p.lock().unwrap()==false {
                 let interval = Duration::from_secs(parameters.time_interval);
-                let mut diff = now.elapsed().unwrap();
+                let diff = now.elapsed().unwrap();
                 if diff > interval {
                     print_report=true;
                     now = SystemTime::now();
                 }
-                map = network_features::capture_packet(selected_device, parameters.file_name.clone(), print_report, map);
+                map = network_features::capture_packet(selected_device, &parameters, print_report,  map);
                 print_report=false;
             }
             //println!("dentro loop thread secondario: end={}",*end.lock().unwrap());
@@ -86,10 +79,10 @@ fn main() {
     });*/
 
     loop {
-        let mut end_copy= end.clone();
+        let end_copy= end.clone();
         let mut line = String::new();
         println!("Enter your command :");
-        let mut std_lock = std::io::stdin();
+        let std_lock = std::io::stdin();
         std_lock.read_line(&mut line).unwrap();
         //let b1 = std::io::stdin().read_line(&mut line).unwrap();
         if line.contains("end") {
@@ -109,16 +102,8 @@ fn main() {
 
 
     match th1.join() {
-        //non serve a nulla, solo per controllare che sia tutto ok
-        Ok(_) => { println!("ok join thread sniff") },
+        Ok(_) => { println!("Capture ended") },
         Err(err) => { println!("{:?}",err) },
     }
-
-    /*
-    match th2.join() {
-        //non serve a nulla, solo per controllare che sia tutto ok
-        Ok(res) => { println!("ok join thread print") },
-        Err(err) => { println!("errore print") },
-    }*/
 
 }

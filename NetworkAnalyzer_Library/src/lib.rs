@@ -93,30 +93,22 @@
 
 pub mod structures;
 pub mod argparse;
-use csv::Writer;
-use serde::Serialize;
 
 pub mod network_features {
     //!Contains all the functions to capture, parse and store the informations sniffed in network packets
     use std::collections::HashMap;
-    use std::env::Args;
-    use std::fs::File;
-    use std::io::{stdout, Write, BufReader, BufWriter};
+    use std::io::{stdout, Write};
     use std::path::Path;
     use pcap::{Device, Capture};
-    use rpcap::read::PcapReader;
-    use rpcap::write::{PcapWriter, WriteOptions};
     use pdu::*;
     use pdu::Tcp::Raw;
     use crate::structures::{CustomPacket, CustomKey, CustomData};
-    use serde::{Serialize, Deserialize};
+    use serde::{Serialize};
     use dns_parser::{Packet};
-    use chrono::{DateTime, Local, NaiveDate, NaiveDateTime};
-    use serde_json::Value;
+    use chrono::{DateTime, Local};
     use std::string::String;
-    use csv::{Writer,WriterBuilder};
-    use std::error::Error;
-    //Stampa a video la lista di ttutti i network adapter e ritorna al main tale lista.
+    use csv::{WriterBuilder};
+    use crate::argparse;
 
     ///Print the list of the available network adapters of PC
     pub fn print_all_devices(list: Vec<Device>) {
@@ -150,12 +142,10 @@ pub mod network_features {
     /// When a packet is received it is passed to function parser_level2_packet which cares about parsing packets byte.
     ///The function capture_packet also updates the HashMap<CustomKey, CustomData> which contains the informations of the captured packets.
     ///Furthermore this functions check the interval previosuly provided by the user. If the interval is elapsed capture_packet calls write_to_file function to store to the file the updated informations about ntwork analisys
-    pub fn capture_packet(selected_device: Device, file_name : String, print_report: bool, mut map: HashMap<CustomKey, CustomData>) -> HashMap<CustomKey, CustomData> {
-
+    pub fn capture_packet(selected_device: Device, arguments : &argparse::ArgsParameters, print_report: bool, mut map: HashMap<CustomKey, CustomData>) -> HashMap<CustomKey, CustomData> {
 
         //let mut cap = selected_device.open().unwrap();
         let mut cap = Capture::from_device(selected_device).unwrap().open().unwrap();
-        //println!("Data link: {:?}",cap.get_datalink());
 
 
         while let Ok(packet) = cap.next_packet() {
@@ -164,15 +154,11 @@ pub mod network_features {
                 packet.header.len
             );
             parse_level2_packet(packet.data, &mut custom_packet);
-            //println!("{:?}", custom_packet);
-            let mut key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port);
-            let key_string = serde_json::to_string(&key1).unwrap();
-            let mut key2 = CustomKey::new(custom_packet.dest_addr, custom_packet.dest_port); //va aggiunta o no??
-            let timestamp = now_date_hour();
-            let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list, timestamp.clone());
+            let key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port);
+            let key2 = CustomKey::new(custom_packet.dest_addr, custom_packet.dest_port); //va aggiunta o no??
+            let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list);
 
             let r = map.get(&key1);//let r = map.get(&key_string);
-
             match r {
                 Some(d) => {
                     let mut old_value = d.clone();
@@ -196,7 +182,7 @@ pub mod network_features {
                 }
             }
             if print_report {
-                write_to_file(map.clone(),file_name);
+                write_to_file(map.clone(), arguments);
             }
             break
         }
@@ -213,17 +199,11 @@ pub mod network_features {
         match EthernetPdu::new(&packet_data) {
             Ok(ethernet_pdu) => {
                 custom_packet.prtocols_list.push("ethernet".to_string());
-                //livello 2
-                /*println!("[ethernet] destination_address: {:x?}", ethernet_pdu.destination_address().as_ref());
-                println!("[ethernet] source_address: {:x?}", ethernet_pdu.source_address().as_ref());*/
-
+                //layer 2
                 // upper-layer protocols can be accessed via the inner() method
                 match ethernet_pdu.inner() {
                     Ok(Ethernet::Ipv4(ipv4_pdu)) => {
-                        //livello 3
-                        /*println!("[ipv4] source_address: {:x?}", ipv4_pdu.source_address().as_ref());
-                        println!("[ipv4] destination_address: {:x?}", ipv4_pdu.destination_address().as_ref());
-                        println!("[ipv4] protocol: 0x{:02x}", ipv4_pdu.protocol());*/
+                        //layer 3
                         let src_vec = Vec::from(ipv4_pdu.source_address());
                         let dst_vec = Vec::from(ipv4_pdu.destination_address());
                         custom_packet.src_addr = src_vec;
@@ -231,11 +211,11 @@ pub mod network_features {
                         custom_packet.prtocols_list.push("ipv4".to_string());
 
                         match ipv4_pdu.inner() {
-                            //livello 4
-                            Ok(Ipv4::Icmp(icmp_pdu)) => {
+                            //layer 4
+                            Ok(Ipv4::Icmp(_icmp_pdu)) => {
                                 custom_packet.prtocols_list.push("ICMP".to_string());
                             }
-                            Ok(Ipv4::Gre(gre_pdu)) => {
+                            Ok(Ipv4::Gre(_gre_pdu)) => {
                                 custom_packet.prtocols_list.push("GRE".to_string());
                             }
 
@@ -243,18 +223,15 @@ pub mod network_features {
                                 custom_packet.prtocols_list.push("TCP".to_string());
                                 custom_packet.src_port = tcp_pdu.source_port();
                                 custom_packet.dest_port = tcp_pdu.destination_port();
-                                /*println!("[TCP] source port: {:?}", tcp_pdu.source_port());
-                                println!("[TCP] destination port: {:?}", tcp_pdu.destination_port());*/
 
                                 let tcp_payload = tcp_pdu.inner().unwrap();
-
                                 match tcp_payload {
                                     Raw(payload) => {
                                         match Packet::parse(payload) {
-                                            Ok(dns_packet) => {
+                                            Ok(_dns_packet) => {
                                                 custom_packet.prtocols_list.push("DNS".to_string());
                                             }
-                                            Err(e) => { /*println!("Packet is not DNS:{:?}",e)*/ }
+                                            Err(_e) => { /*Packet is not DNS*/ }
                                         }
                                     }
                                 }
@@ -264,34 +241,31 @@ pub mod network_features {
                                 custom_packet.prtocols_list.push("UDP".to_string());
                                 custom_packet.src_port = udp_pdu.source_port();
                                 custom_packet.dest_port = udp_pdu.destination_port();
-                                /*println!("[UDP] source port: {:?}", udp_pdu.source_port());
-                                println!("[TCP] destination port: {:?}", udp_pdu.destination_port());*/
 
                                 let udp_payload = udp_pdu.inner().unwrap();
-
                                 match udp_payload {
                                     Udp::Raw(payloadd) => {
                                         match Packet::parse(payloadd) {
-                                            Ok(dns_packet) => {
+                                            Ok(_dns_packet) => {
                                                 custom_packet.prtocols_list.push("DNS".to_string());
                                             }
-                                            Err(e) => { /*println!("Packet is not DNS:{:?}",e)*/ }
+                                            Err(_e) => { /*Packet is not DNS*/ }
                                         }
                                     }
                                 }
                             }
 
                             Ok(other) => {
-                                panic!("Unexpected protocol inside Ipv4Pdu {:?}", other);
+                                println!("Unrecognized protocol inside Ipv4Pdu {:?}", other);
                             }
 
                             Err(e) => {
-                                panic!("Ipv4pdu::inner() parser failure: {:?}", e);
+                                println!("Parser failure of the inner content of Ipv4pdu : {:?}", e);
                             }
                         }
                     }
                     Ok(Ethernet::Ipv6(ipv6_pdu)) => {
-                        //livello 3
+                        //layer 3
                         let src_vec = Vec::from(ipv6_pdu.source_address());
                         let dst_vec = Vec::from(ipv6_pdu.destination_address());
                         custom_packet.src_addr = src_vec;
@@ -300,32 +274,27 @@ pub mod network_features {
                         // upper-layer protocols can be accessed via the inner() method (not shown)
 
                         match ipv6_pdu.inner() {
-                            Ok(Ipv6::Icmp(icmp_pdu)) => {
+                            Ok(Ipv6::Icmp(_icmp_pdu)) => {
                                 custom_packet.prtocols_list.push("ICMP".to_string());
                             }
-                            Ok(Ipv6::Gre(gre_pdu)) => {
+                            Ok(Ipv6::Gre(_gre_pdu)) => {
                                 custom_packet.prtocols_list.push("GRE".to_string());
                             }
 
-
-                            //livello 4
+                            //layer 4
                             Ok(Ipv6::Tcp(tcp_pdu)) => {
                                 custom_packet.prtocols_list.push("TCP".to_string());
                                 custom_packet.src_port = tcp_pdu.source_port();
                                 custom_packet.dest_port = tcp_pdu.destination_port();
-                                /*println!("[TCP] source port: {:?}", tcp_pdu.source_port());
-                                println!("[TCP] destination port: {:?}", tcp_pdu.destination_port());*/
 
                                 let tcp_payload = tcp_pdu.inner().unwrap();
-
                                 match tcp_payload {
                                     Raw(payload) => {
                                         match Packet::parse(payload) {
-                                            Ok(dns_packet) => {
+                                            Ok(_dns_packet) => {
                                                 custom_packet.prtocols_list.push("DNS".to_string());
-                                                //println!("{:?}",dns_packet);
                                             }
-                                            Err(e) => { /*println!("Packet is not DNS:{:?}",e)*/ }
+                                            Err(_e) => { /*Packet is not DNS*/ }
                                         }
                                     }
                                 }
@@ -335,68 +304,53 @@ pub mod network_features {
                                 custom_packet.prtocols_list.push("UDP".to_string());
                                 custom_packet.src_port = udp_pdu.source_port();
                                 custom_packet.dest_port = udp_pdu.destination_port();
-                                /*println!("[UDP] source port: {:?}", udp_pdu.source_port());
-                                println!("[TCP] destination port: {:?}", udp_pdu.destination_port());*/
 
                                 let udp_payload = udp_pdu.inner().unwrap();
-
                                 match udp_payload {
                                     Udp::Raw(payloadd) => {
                                         match Packet::parse(payloadd) {
-                                            Ok(dns_packet) => {
+                                            Ok(_dns_packet) => {
                                                 custom_packet.prtocols_list.push("DNS".to_string());
-                                                //println!("{:?}",dns_packet);
                                             }
-                                            Err(e) => { /*println!("Packet is not DNS:{:?}",e)*/ }
+                                            Err(_e) => { /*Packet is not DNS*/ }
                                         }
                                     }
                                 }
                             }
 
                             Ok(other) => {
-                                panic!("Unexpected protocol inside Ipv6Pdu {:?}", other);
+                                println!("Unrecognized protocol inside Ipv6Pdu {:?}", other);
                             }
 
                             Err(e) => {
-                                panic!("Ipv6pdu::inner() parser failure: {:?}", e);
+                                println!("Parser failure of the inner content of Ipv6pdu : {:?}", e);
                             }
                         }
                     }
 
-                    Ok(Ethernet::Arp(arp_pdu)) => {
-                        //livello 3
+                    Ok(Ethernet::Arp(_arp_pdu)) => {
+                        //layer 3
                         custom_packet.prtocols_list.push("ARP".to_string());
-                        /*println!("[ARP] sender hardware address: {:x?}", arp_pdu.sender_hardware_address().as_ref());
-                        println!("[ARP] sender protocol address: {:x?}", arp_pdu.sender_protocol_address().as_ref());
-                        println!("[ARP] target hardware address: {:x?}", arp_pdu.target_hardware_address().as_ref());
-                        println!("[ARP] targer protocol address: {:x?}", arp_pdu.target_protocol_address().as_ref());*/
-                        //ARP al contrario di ip non consente di vedere cosa c'è nei livelli sucessivi.
-                        //Non ha il metodo inner, è giusto?
                     }
 
                     Ok(other) => {
-                        panic!("Unexpected protocol {:?}", other);
+                        println!("Unrecognized protocol for packet: {:?}", other);
                     }
                     Err(e) => {
-                        panic!("EthernetPdu::inner() parser failure: {:?}", e);
+                        println!("Parser failure of EthernetPdu: {:?}", e);
                     }
                 }
             }
             Err(e) => {
-                panic!("EthernetPdu::new() parser failure: {:?}", e);
+                println!("Parser failure for packet: {:?}", e);
             }
         }
     }
 
 
 
-    pub fn write_to_file(mut map: HashMap<CustomKey, CustomData>, file_name: String)  {
-
-        //fake filters
-        let min_len = 100 as u32;
-        let port = "443".to_string();
-        let protocol = "UDP".to_string();
-        let mut f_name = file_name.clone();
+    pub fn write_to_file(mut map: HashMap<CustomKey, CustomData>, arguments : &argparse::ArgsParameters)  {
+        let mut f_name = arguments.file_name.clone();
         //path_name.push_str(".txt");
         f_name.push_str(".csv");
         let mut path_name = "results/".to_string();
@@ -405,11 +359,16 @@ pub mod network_features {
         //let mut file = File::create(path_file).unwrap();
         let mut file = csv::Writer::from_path(path_file).unwrap();
         //filter the hashmap
-        let mut map_to_print: HashMap<CustomKey, CustomData> = HashMap::new();
-        //map_to_print = filter_len(map,min_len );
-        //map_to_print = filter_protocol(map_to_print, protocol);
-        //map_to_print= filter_address(map, port);
-        map_to_print = map;
+        let mut map_to_print: HashMap<CustomKey, CustomData> = map.clone();
+        if arguments.filter_bytes_set {
+            map_to_print = filter_len(map.clone(), arguments.bytes_threshold);
+        }
+        if arguments.filter_protocols_set{
+            map_to_print = filter_protocol(map_to_print, arguments.protocol_name.clone());
+        }
+        if arguments.filter_port_set {
+            map_to_print = filter_port(map_to_print, arguments.port);
+        }
         //print on a file. Must be converted in a csv file
         //serde_json::to_writer(file, &map_to_print).unwrap();
         file.write_record(&["ip address/Port", "    Length","    Protocols", "   Start Time", "  End Time"]);
@@ -460,12 +419,12 @@ pub mod network_features {
 
     ///Receive the HashMap<String, CustomData> and the filter on the minimum byte threshold provided by the user. Drops all the rows
     ///of th HashMamp with cumulative byte lenght lower than threshold
-    pub fn filter_len(mut map: HashMap<String, CustomData>, len_minimum: u32) -> HashMap<String, CustomData> {
-        let mut filtered_map: HashMap<String, CustomData> = HashMap::new();
+    pub fn filter_len(mut map: HashMap<CustomKey, CustomData>, len_minimum: u64) -> HashMap<CustomKey, CustomData> {
+        let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
             let keyy = raw.0;
             let vall = raw.1;
-            if vall.len > len_minimum {
+            if vall.len as u64> len_minimum {
                 filtered_map.insert(keyy, vall);
             }
         }
@@ -474,12 +433,12 @@ pub mod network_features {
 
     ///Receive the HashMap<String, CustomData> and the filter on the required address/port provided by the user. Drops all the rows
     ///of the HashMamp which don't contains that address/filter
-    pub fn filter_address(mut map: HashMap<String, CustomData>, address_required: String) -> HashMap<String, CustomData> {
-        let mut filtered_map: HashMap<String, CustomData> = HashMap::new();
+    pub fn filter_port(mut map: HashMap<CustomKey, CustomData>, port: u16) -> HashMap<CustomKey, CustomData> {
+        let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
             let keyy = raw.0;
             let vall = raw.1;
-            if keyy.as_str().contains(address_required.clone().as_str()) {
+            if keyy.port.clone()== port {
                 filtered_map.insert(keyy, vall);
             }
         }
@@ -488,13 +447,13 @@ pub mod network_features {
 
     ///Receive the HashMap<String, CustomData> and the protocol name filter provided by the user. Drops all the rows
     ///of th HashMamp which don't contains the specifie protocol
-    pub fn filter_protocol(mut map: HashMap<String, CustomData>, protocol_required: String) -> HashMap<String, CustomData> {
-        let mut filtered_map: HashMap<String, CustomData> = HashMap::new();
+    pub fn filter_protocol(mut map: HashMap<CustomKey, CustomData>, protocol_required: String) -> HashMap<CustomKey, CustomData> {
+        let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
             let mut insert = false;
             let keyy = raw.0;
             let vall = raw.1.clone();
-            let mut protocols = vall.protocols.clone();
+            let protocols = vall.protocols.clone();
             for p in protocols {
                 if p.to_lowercase().eq(&protocol_required.clone().to_lowercase()) {
                     insert = true;
