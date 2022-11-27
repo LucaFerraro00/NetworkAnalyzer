@@ -1,47 +1,73 @@
 ip address/Port,    Length,    Protocols,   Start Time,  End Time
-"54.236.169.153/443,1330,ethernet-ipv4-TCP,25/11/2022 - 12:48:04.098,25/11/2022 - 12:48:36.772
-","108.138.199.72/443,26892,ethernet-ipv4-TCP,25/11/2022 - 12:47:58.208,25/11/2022 - 12:48:06.160
-","52.28.143.91/443,7058,ethernet-ipv4-TCP,25/11/2022 - 12:48:13.819,25/11/2022 - 12:48:15.764
-","142.250.180.162/443,2584,ethernet-ipv4-UDP,25/11/2022 - 12:48:15.518,25/11/2022 - 12:48:15.532
-","108.139.243.38/443,36122,ethernet-ipv4-TCP,25/11/2022 - 12:47:53.334,25/11/2022 - 12:48:08.858
+"ip_port	len	protocols	start_timestamp	end_timestamp
+31.13.86.51/443	17836	ethernet-ipv4-UDP	27/11/2022 - 15:41:32.646	27/11/2022 - 15:41:33.010
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/49563	188	ethernet-ipv4-TCP	27/11/2022 - 15:41:21.012	27/11/2022 - 15:41:21.247
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/49468	54	ethernet-ipv4-TCP	27/11/2022 - 15:43:03.702	27/11/2022 - 15:43:03.702
+","ip_port	len	protocols	start_timestamp	end_timestamp
+142.250.184.106/443	1616	ethernet-ipv4-UDP	27/11/2022 - 15:41:31.008	27/11/2022 - 15:42:34.694
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/58423	382	ethernet-ipv4-UDP	27/11/2022 - 15:41:32.674	27/11/2022 - 15:41:32.988
 "
-"178.250.2.151/443,1895,ethernet-ipv4-TCP,25/11/2022 - 12:48:20.315,25/11/2022 - 12:48:20.318
-","142.250.180.163/443,1292,ethernet-ipv4-UDP,25/11/2022 - 12:48:03.554,25/11/2022 - 12:48:03.554
-","18.157.110.220/443,1519,ethernet-ipv4-TCP,25/11/2022 - 12:47:54.621,25/11/2022 - 12:48:56.116
-","142.250.180.174/443,666,ethernet-ipv4-UDP,25/11/2022 - 12:47:58.779,25/11/2022 - 12:48:25.514
-","142.251.209.1/443,566,ethernet-ipv4-TCP,25/11/2022 - 12:48:04.278,25/11/2022 - 12:48:04.278
+"ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/62920	1292	ethernet-ipv4-UDP	27/11/2022 - 15:41:30.577	27/11/2022 - 15:41:30.577
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/60512	1292	ethernet-ipv4-UDP	27/11/2022 - 15:41:31.845	27/11/2022 - 15:41:31.845
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/49561	1634	ethernet-ipv4-TCP	27/11/2022 - 15:40:58.572	27/11/2022 - 15:41:03.391
+","ip_port	len	protocols	start_timestamp	end_timestamp
+204.79.197.200/443	54	ethernet-ipv4-TCP	27/11/2022 - 15:42:03.851	27/11/2022 - 15:42:03.851
+","ip_port	len	protocols	start_timestamp	end_timestamp
+142.251.209.46/443	529	ethernet-ipv4-UDP	27/11/2022 - 15:41:20.244	27/11/2022 - 15:41:32.279
 "
-"157.240.231.60/443,198549,ethernet-ipv4-TCP,25/11/2022 - 12:47:51.428,25/11/2022 - 12:49:02.058
-","3.64.219.249/443,1279,ethernet-ipv4-TCP,25/11/2022 - 12:47:59.557,25/11/2022 - 12:49:12.753
-","104.17.25.14/443,6053,ethernet-ipv4-TCP,25/11/2022 - 12:48:15.974,25/11/2022 - 12:48:16.261
-","151.101.242.248/443,363752,ethernet-ipv4-TCP,25/11/2022 - 12:47:51.460,25/11/2022 - 12:49:08.113
-","140.82.114.21/443,1490,ethernet-ipv4-TCP,25/11/2022 - 12:48:14.182,25/11/2022 - 12:48:14.182
+"ip_port	len	protocols	start_timestamp	end_timestamp
+149.154.167.99/443	57615	ethernet-ipv4-TCP	27/11/2022 - 15:41:20.620	27/11/2022 - 15:42:57.732
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/49514	1085	ethernet-ipv4-TCP	27/11/2022 - 15:41:20.164	27/11/2022 - 15:42:43.991
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/49533	108	ethernet-ipv4-TCP	27/11/2022 - 15:41:21.313	27/11/2022 - 15:41:24.991
+","ip_port	len	protocols	start_timestamp	end_timestamp
+142.250.180.132/443	6815	ethernet-ipv4-UDP	27/11/2022 - 15:41:19.590	27/11/2022 - 15:42:21.421
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/49568	134	ethernet-ipv4-TCP	27/11/2022 - 15:41:23.309	27/11/2022 - 15:41:23.309
 "
-"44.193.180.234/443,3028,ethernet-ipv4-TCP,25/11/2022 - 12:48:22.079,25/11/2022 - 12:48:22.106
-","34.251.186.50/443,1514,ethernet-ipv4-TCP,25/11/2022 - 12:47:52.715,25/11/2022 - 12:47:52.715
-","138.199.37.229/443,2798,ethernet-ipv4-TCP,25/11/2022 - 12:47:54.115,25/11/2022 - 12:48:08.200
-","3.75.3.113/443,1580,ethernet-ipv4-TCP,25/11/2022 - 12:48:22.237,25/11/2022 - 12:48:22.295
-","37.157.2.239/443,3503,ethernet-ipv4-TCP,25/11/2022 - 12:48:19.050,25/11/2022 - 12:48:19.083
+"ip_port	len	protocols	start_timestamp	end_timestamp
+142.250.180.163/443	162	ethernet-ipv4-UDP	27/11/2022 - 15:42:24.699	27/11/2022 - 15:42:24.699
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/49573	66	ethernet-ipv4-TCP	27/11/2022 - 15:43:10.654	27/11/2022 - 15:43:10.654
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/49569	2603	ethernet-ipv4-TCP	27/11/2022 - 15:41:23.474	27/11/2022 - 15:43:10.551
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.1/53	141	ethernet-ipv4-UDP	27/11/2022 - 15:41:30.648	27/11/2022 - 15:41:30.648
+","ip_port	len	protocols	start_timestamp	end_timestamp
+157.240.203.60/443	516	ethernet-ipv4-TCP	27/11/2022 - 15:41:12.306	27/11/2022 - 15:42:17.382
 "
-"140.82.121.3/443,18093,ethernet-ipv4-TCP,25/11/2022 - 12:48:05.116,25/11/2022 - 12:48:09.483
-","185.199.109.133/443,3378,ethernet-ipv4-TCP,25/11/2022 - 12:48:09.038,25/11/2022 - 12:48:12.538
-","34.203.18.187/443,787,ethernet-ipv4-TCP,25/11/2022 - 12:48:19.853,25/11/2022 - 12:48:19.853
-","34.149.12.213/443,7929,ethernet-ipv4-TCP,25/11/2022 - 12:48:15.694,25/11/2022 - 12:48:21.783
-","3.66.124.166/443,1826,ethernet-ipv4-TCP,25/11/2022 - 12:48:20.618,25/11/2022 - 12:48:20.663
+"ip_port	len	protocols	start_timestamp	end_timestamp
+142.250.184.42/443	271	ethernet-ipv4-UDP	27/11/2022 - 15:40:51.458	27/11/2022 - 15:41:35.695
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/49566	55	ethernet-ipv4-TCP	27/11/2022 - 15:42:55.300	27/11/2022 - 15:42:55.300
+","ip_port	len	protocols	start_timestamp	end_timestamp
+104.43.200.36/443	54	ethernet-ipv4-TCP	27/11/2022 - 15:40:58.158	27/11/2022 - 15:40:58.158
+","ip_port	len	protocols	start_timestamp	end_timestamp
+142.251.209.14/443	134	ethernet-ipv4-UDP	27/11/2022 - 15:42:46.324	27/11/2022 - 15:42:51.758
+","ip_port	len	protocols	start_timestamp	end_timestamp
+91.80.51.35/443	1274	ethernet-ipv4-UDP	27/11/2022 - 15:41:32.639	27/11/2022 - 15:41:32.639
 "
-"142.250.184.66/443,12880,ethernet-ipv4-UDP,25/11/2022 - 12:48:03.734,25/11/2022 - 12:48:18.248
-","142.250.184.78/443,8467,ethernet-ipv4-UDP,25/11/2022 - 12:48:01.784,25/11/2022 - 12:48:25.199
-","142.250.180.170/443,1292,ethernet-ipv4-UDP,25/11/2022 - 12:48:10.036,25/11/2022 - 12:48:10.036
-","34.240.54.244/443,1089,ethernet-ipv4-TCP,25/11/2022 - 12:48:21.062,25/11/2022 - 12:48:21.063
-","140.82.121.6/443,1484,ethernet-ipv4-TCP,25/11/2022 - 12:48:14.048,25/11/2022 - 12:48:14.249
+"ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/52616	75	ethernet-ipv4-UDP	27/11/2022 - 15:41:37.016	27/11/2022 - 15:41:37.016
+","ip_port	len	protocols	start_timestamp	end_timestamp
+140.82.121.6/443	1199	ethernet-ipv4-TCP	27/11/2022 - 15:41:18.326	27/11/2022 - 15:42:17.050
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/58144	151	ethernet-ipv4-UDP	27/11/2022 - 15:41:32.749	27/11/2022 - 15:41:32.872
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/57726	1363	ethernet-ipv4-UDP	27/11/2022 - 15:41:20.167	27/11/2022 - 15:41:39.940
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/54450	127	ethernet-ipv4-UDP	27/11/2022 - 15:40:45.952	27/11/2022 - 15:40:45.952
 "
-"54.77.238.6/443,4681,ethernet-ipv4-TCP,25/11/2022 - 12:48:14.530,25/11/2022 - 12:48:49.825
-","13.248.245.213/443,2178,ethernet-ipv4-TCP,25/11/2022 - 12:48:21.936,25/11/2022 - 12:48:22.034
-","54.197.48.148/443,1514,ethernet-ipv4-TCP,25/11/2022 - 12:48:25.526,25/11/2022 - 12:48:25.526
-","3.73.221.153/443,15600,ethernet-ipv4-TCP,25/11/2022 - 12:48:16.084,25/11/2022 - 12:48:21.958
-","142.250.180.129/443,10336,ethernet-ipv4-UDP,25/11/2022 - 12:48:15.255,25/11/2022 - 12:48:18.859
-"
-"88.221.111.50/443,23926,ethernet-ipv4-TCP,25/11/2022 - 12:48:14.828,25/11/2022 - 12:48:19.035
-","157.240.231.35/443,2813,ethernet-ipv4-UDP,25/11/2022 - 12:48:00.178,25/11/2022 - 12:48:20.682
-","108.138.189.33/443,7578,ethernet-ipv4-TCP,25/11/2022 - 12:48:02.246,25/11/2022 - 12:48:50.010
-","51.124.57.87/443,1091,ethernet-ipv4-TCP,25/11/2022 - 12:48:02.216,25/11/2022 - 12:48:18.216
+"ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/55530	675	ethernet-ipv4-UDP	27/11/2022 - 15:40:57.842	27/11/2022 - 15:42:58.108
+","ip_port	len	protocols	start_timestamp	end_timestamp
+192.168.43.48/49572	212	ethernet-ipv4-TCP	27/11/2022 - 15:42:59.495	27/11/2022 - 15:42:59.495
+","ip_port	len	protocols	start_timestamp	end_timestamp
+20.54.37.73/443	54	ethernet-ipv4-TCP	27/11/2022 - 15:42:22.022	27/11/2022 - 15:42:22.022
