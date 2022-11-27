@@ -373,7 +373,7 @@ pub mod network_features {
         //serde_json::to_writer(file, &map_to_print).unwrap();
         file.write_record(&["ip address/Port", "    Length","    Protocols", "   Start Time", "  End Time"]);
         #[derive (Serialize)]
-        struct Row {
+        struct Record {
             ip_port : String,
             len : String,
             protocols : String,
@@ -382,21 +382,22 @@ pub mod network_features {
         }
 
         for key in map_to_print.keys() {
-            let formatted_key=format_key(key);
+            let formatted_key = format_key(key);
             /*file.serialize(formatted_key);
             file.serialize(map_to_print.get(key));
             file.write_record(&[""]);*/
             let mut wtr = WriterBuilder::new()
-                .has_headers(false)
+                .delimiter(b'\t')
+                .has_headers(true)
                 .from_writer(vec![]);
-            wtr.serialize(Row {
-                ip_port : formatted_key,
+            wtr.serialize(Record {
+                ip_port : formatted_key.to_string(),
                 len: map_to_print.get(key).unwrap().len.clone().to_string(),
                 protocols: map_to_print.get(key).unwrap().protocols.clone().join("-"),
                 start_timestamp: map_to_print.get(key).unwrap().start_timestamp.clone(),
                 end_timestamp: map_to_print.get(key).unwrap().end_timestamp.clone()
             }).unwrap();
-            let row_string =String::from_utf8(wtr.into_inner().unwrap()).unwrap();
+            let row_string = String::from_utf8(wtr.into_inner().unwrap()).unwrap();
             //println!("{}",row_string);
             file.write_record(&[row_string]);
         }
