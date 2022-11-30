@@ -41,13 +41,15 @@ impl CustomPacket {
 #[derive(Eq, PartialEq, Debug, Clone, Hash, Serialize)]
 ///This struct is used ad key in the HashMap that stores network analisys information
 pub struct CustomKey{
-    pub ip : Vec<u8>,
-    pub port : u16,
+    pub ip_source : Vec<u8>,
+    pub port_source : u16,
+    pub ip_dest : Vec<u8>,
+    pub port_dest : u16,
 }
 
 impl  CustomKey {
-    pub fn new (ip : Vec<u8>, port : u16,) -> CustomKey{
-        CustomKey{ip, port}
+    pub fn new (ip_source : Vec<u8>, port_source : u16, ip_dest: Vec<u8>, port_dest: u16,) -> CustomKey{
+        CustomKey{ip_source, port_source, ip_dest, port_dest}
     }
 }
 

@@ -154,8 +154,7 @@ pub mod network_features {
                 packet.header.len
             );
             parse_level2_packet(packet.data, &mut custom_packet);
-            let key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port);
-            let key2 = CustomKey::new(custom_packet.dest_addr, custom_packet.dest_port); //va aggiunta o no??
+            let key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port, custom_packet.dest_addr, custom_packet.dest_port);
             let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list);
 
             let r = map.get(&key1);//let r = map.get(&key_string);
@@ -371,50 +370,67 @@ pub mod network_features {
         }
         //print on a file. Must be converted in a csv file
         //serde_json::to_writer(file, &map_to_print).unwrap();
-        file.write_record(&["ip address/Port", "    Length","    Protocols", "   Start Time", "  End Time"]);
+        //file.write_record(&["ip address/Port", "        Length","    Protocols", "      Start Time", "      End Time"]);
         #[derive (Serialize)]
         struct Record {
-            ip_port : String,
-            len : String,
-            protocols : String,
-            start_timestamp: String,
-            end_timestamp:String,
+            ip_port_source : String,
+            ip_port_dest : String,
+            Length : String,
+            Protocols : String,
+            Start_timestamp: String,
+            End_timestamp:String,
         }
 
+        let mut wtr = WriterBuilder::new()
+            //.delimiter(b',')
+            .has_headers(true)
+            .from_writer(vec![]);
+
         for key in map_to_print.keys() {
-            let formatted_key = format_key(key);
+            let (source,dest) = format_key(key);
             /*file.serialize(formatted_key);
             file.serialize(map_to_print.get(key));
             file.write_record(&[""]);*/
-            let mut wtr = WriterBuilder::new()
-                .delimiter(b'\t')
-                .has_headers(true)
-                .from_writer(vec![]);
+
             wtr.serialize(Record {
-                ip_port : formatted_key.to_string(),
-                len: map_to_print.get(key).unwrap().len.clone().to_string(),
-                protocols: map_to_print.get(key).unwrap().protocols.clone().join("-"),
-                start_timestamp: map_to_print.get(key).unwrap().start_timestamp.clone(),
-                end_timestamp: map_to_print.get(key).unwrap().end_timestamp.clone()
+                ip_port_source : source,
+                ip_port_dest : dest,
+                Length: map_to_print.get(key).unwrap().len.clone().to_string(),
+                Protocols: map_to_print.get(key).unwrap().protocols.clone().join("-"),
+                Start_timestamp: map_to_print.get(key).unwrap().start_timestamp.clone(),
+                End_timestamp: map_to_print.get(key).unwrap().end_timestamp.clone()
             }).unwrap();
-            let row_string = String::from_utf8(wtr.into_inner().unwrap()).unwrap();
-            //println!("{}",row_string);
-            file.write_record(&[row_string]);
         }
+        wtr.flush().unwrap();
+        let mut row_string = String::from_utf8(wtr.into_inner().unwrap()).unwrap();
+
+        //println!("{}",row_string);
+        file.serialize(&[row_string]);
     }
 
-    pub fn format_key( k : &CustomKey) -> String{
-        let mut ip = k.ip.clone();
+    pub fn format_key( k : &CustomKey) -> (String,String){
+        let mut ip_s = k.ip_source.clone();
         let mut s = String::new();
-        for n in ip{
+        for n in ip_s{
             s.push_str(n.to_string().as_str());
             s.push('.');
         }
         s.pop();
-        let port = k.port.clone();
+        let port_s = k.port_source.clone();
         s.push('/');
-        s.push_str(port.to_string().as_str());
-        s
+        s.push_str(port_s.to_string().as_str());
+
+        let mut d = String::new();
+        let mut ip_d = k.ip_dest.clone();
+        for n in ip_d{
+            d.push_str(n.to_string().as_str());
+            d.push('.');
+        }
+        d.pop();
+        let port_d = k.port_dest.clone();
+        d.push('/');
+        d.push_str(port_d.to_string().as_str());
+        return (s,d)
     }
 
 
@@ -439,7 +455,7 @@ pub mod network_features {
         for raw in map {
             let keyy = raw.0;
             let vall = raw.1;
-            if keyy.port.clone()== port {
+            if keyy.port_source.clone()== port {
                 filtered_map.insert(keyy, vall);
             }
         }
