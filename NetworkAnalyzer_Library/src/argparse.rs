@@ -1,6 +1,7 @@
 //! Manage and parse CLI parameters
 
-use clap::{Arg, Command, ArgMatches};
+use clap::{Arg, Command, ArgMatches, ArgAction};
+use clap::ArgAction::SetTrue;
 use colored::*;
 use crate::network_features::print_all_devices;
 use pcap::Device;
@@ -159,14 +160,15 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
         protocol_name=(*prot.clone().to_string()).parse().unwrap();
     }
 
+    let mut list_par = false;
     if matches.contains_id("list") {
         let list = Device::list().unwrap();
         print_all_devices(list.clone());
         std::process::exit(0);
+        list_par = true;
     }
-    let mut list = matches.get_flag("list");
 
-    ArgsParameters::new(nic_id, time_interval, file_name,address_set, port_set, byte_set, protocol_set, address_filter, port_filter, byte_threshold, protocol_name, list )
+    ArgsParameters::new(nic_id, time_interval, file_name,address_set, port_set, byte_set, protocol_set, address_filter, port_filter, byte_threshold, protocol_name, list_par )
 }
 
 ///Print "Network Analyzer" in a cool way in to the user terminal
