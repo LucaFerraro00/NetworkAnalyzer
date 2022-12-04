@@ -109,16 +109,29 @@ pub mod network_features {
     use std::string::String;
     use csv::{WriterBuilder};
     use crate::argparse;
+    use colored::*;
 
     ///Print the list of the available network adapters of PC
     pub fn print_all_devices(list: Vec<Device>) {
         let mut i = 1;
-        println!("The available devices are:");
+        //println!("The available devices are:");
+        println!("| {0:-^7} | {1:-^20} | {2:-^20} | {3:-^50} |",
+                 "Index".bold(), "Name".bold(), "Addresses".bold(), "Description".bold());
         for (j, d) in list.clone().iter().enumerate() {
-            println!("{}) {:?}", j, d);
+            let addresses : Vec<String> = d.addresses.iter()
+                .map(|addr_struct | addr_struct.addr.to_string())
+                .collect();
+            let addresses_str = addresses.join(", ");
+            let description = match &d.desc{
+                Some(des) => String::from(des),
+                _ => String::new()
+            };
+            println!("| {0: ^7} | {1: <20} | {2: <20 } | {3: <50} |", j, d.name,
+                     addresses_str, description);
             //println!("{}) NAME: {} -- DESCRIPTION: {}",i,d.name, d.desc.unwrap());
             i = i + 1;
         }
+        println!("{:-<110}", "");
     }
 
 

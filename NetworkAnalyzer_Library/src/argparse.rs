@@ -67,6 +67,7 @@ pub struct ArgsParameters {
     pub port : u16,
     pub bytes_threshold : u64,
     pub protocol_name : String,
+    pub list: bool
 }
 
 impl ArgsParameters {
@@ -80,7 +81,8 @@ impl ArgsParameters {
                 address : String,
                 port : u16,
                 bytes_threshold : u64,
-                protocol_name : String,) -> ArgsParameters
+                protocol_name : String,
+                list: bool) -> ArgsParameters
     {
         ArgsParameters {
             nic_id,
@@ -93,7 +95,9 @@ impl ArgsParameters {
             address,
             port,
             bytes_threshold,
-            protocol_name}
+            protocol_name,
+            list
+        }
     }
 }
 
@@ -155,7 +159,14 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
         protocol_name=(*prot.clone().to_string()).parse().unwrap();
     }
 
-    ArgsParameters::new(nic_id, time_interval, file_name,address_set, port_set, byte_set, protocol_set, address_filter, port_filter, byte_threshold, protocol_name )
+    if matches.contains_id("list") {
+        let list = Device::list().unwrap();
+        print_all_devices(list.clone());
+        std::process::exit(0);
+    }
+    let mut list = matches.get_flag("list");
+
+    ArgsParameters::new(nic_id, time_interval, file_name,address_set, port_set, byte_set, protocol_set, address_filter, port_filter, byte_threshold, protocol_name, list )
 }
 
 ///Print "Network Analyzer" in a cool way in to the user terminal
