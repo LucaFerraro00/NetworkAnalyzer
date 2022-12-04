@@ -67,6 +67,7 @@ pub struct ArgsParameters {
     pub port : u16,
     pub bytes_threshold : u64,
     pub protocol_name : String,
+    pub list: bool
 }
 
 impl ArgsParameters {
@@ -80,7 +81,8 @@ impl ArgsParameters {
                 address : String,
                 port : u16,
                 bytes_threshold : u64,
-                protocol_name : String,) -> ArgsParameters
+                protocol_name : String,
+                list: bool) -> ArgsParameters
     {
         ArgsParameters {
             nic_id,
@@ -93,7 +95,9 @@ impl ArgsParameters {
             address,
             port,
             bytes_threshold,
-            protocol_name}
+            protocol_name,
+            list
+        }
     }
 }
 
