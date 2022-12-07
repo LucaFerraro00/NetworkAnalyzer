@@ -97,6 +97,7 @@ pub mod argparse;
 pub mod network_features {
     //!Contains all the functions to capture, parse and store the informations sniffed in network packets
     use std::collections::HashMap;
+    use std::fs::File;
     use std::io::{stdout, Write};
     use std::path::Path;
     use pcap::{Device, Capture};
@@ -107,9 +108,12 @@ pub mod network_features {
     use dns_parser::{Packet};
     use chrono::{DateTime, Local};
     use std::string::String;
-    use csv::{WriterBuilder};
+    use csv::{Writer, WriterBuilder};
     use crate::argparse;
     use colored::*;
+    use ansi_term::{Colour, Style};
+    use crate::argparse::ArgsParameters;
+
 
     ///Print the list of the available network adapters of PC
     pub fn print_all_devices(list: Vec<Device>) {
@@ -361,7 +365,7 @@ pub mod network_features {
 
 
 
-    pub fn write_to_file(mut map: HashMap<CustomKey, CustomData>, arguments : &argparse::ArgsParameters)  {
+    pub fn write_to_file( map: HashMap<CustomKey, CustomData>, arguments : &argparse::ArgsParameters)  {
         let mut f_name = arguments.file_name.clone();
         //path_name.push_str(".txt");
         f_name.push_str(".csv");
@@ -369,17 +373,36 @@ pub mod network_features {
         path_name.push_str(&*f_name);
         let path_file = Path::new(&path_name);
         //let mut file = File::create(path_file).unwrap();
-        let mut file = csv::Writer::from_path(path_file).unwrap();
+        let mut file : Writer<File>;
+        match csv::Writer::from_path(path_file) {
+            Ok(f)=>{  file = f;}
+            Err(e) => {
+                              let msg = "Error in report file generation/update: ".red();
+                              println!( "{} {}", msg, e.to_string().as_str().red() );
+                              let msg ="Please check the error and start the application again".red();
+                              println!("{}",msg);
+                              std::process::exit(0);
+            }
+        }
         //filter the hashmap
         let mut map_to_print: HashMap<CustomKey, CustomData> = map.clone();
+        if arguments.filter_address_set_source {
+            map_to_print = filter_ip_address_source(map_to_print, arguments.filter_address_source.clone())
+        }
+        if arguments.filter_address_set_dest {
+            map_to_print = filter_ip_address_dest(map_to_print, arguments.filter_address_dest.clone());
+        }
+        if arguments.filter_port_set_source {
+            map_to_print = filter_port_source(map_to_print, arguments.port_source);
+        }
+        if arguments.filter_port_set_dest {
+            map_to_print = filter_port_dest(map_to_print, arguments.port_dest);
+        }
         if arguments.filter_bytes_set {
-            map_to_print = filter_len(map.clone(), arguments.bytes_threshold);
+            map_to_print = filter_len(map_to_print, arguments.bytes_threshold);
         }
         if arguments.filter_protocols_set{
             map_to_print = filter_protocol(map_to_print, arguments.protocol_name.clone());
-        }
-        if arguments.filter_port_set {
-            map_to_print = filter_port(map_to_print, arguments.port);
         }
         //print on a file. Must be converted in a csv file
         //serde_json::to_writer(file, &map_to_print).unwrap();
@@ -388,10 +411,10 @@ pub mod network_features {
         struct Record {
             ip_port_source : String,
             ip_port_dest : String,
-            Length : String,
-            Protocols : String,
-            Start_timestamp: String,
-            End_timestamp:String,
+            length : String,
+            protocols : String,
+            start_timestamp: String,
+            end_timestamp:String,
         }
 
         let mut wtr = WriterBuilder::new()
@@ -408,21 +431,24 @@ pub mod network_features {
             wtr.serialize(Record {
                 ip_port_source : source,
                 ip_port_dest : dest,
-                Length: map_to_print.get(key).unwrap().len.clone().to_string(),
-                Protocols: map_to_print.get(key).unwrap().protocols.clone().join("-"),
-                Start_timestamp: map_to_print.get(key).unwrap().start_timestamp.clone(),
-                End_timestamp: map_to_print.get(key).unwrap().end_timestamp.clone()
+                length: map_to_print.get(key).unwrap().len.clone().to_string(),
+                protocols: map_to_print.get(key).unwrap().protocols.clone().join("-"),
+                start_timestamp: map_to_print.get(key).unwrap().start_timestamp.clone(),
+                end_timestamp: map_to_print.get(key).unwrap().end_timestamp.clone()
             }).unwrap();
         }
         wtr.flush().unwrap();
-        let mut row_string = String::from_utf8(wtr.into_inner().unwrap()).unwrap();
+        let row_string = String::from_utf8(wtr.into_inner().unwrap()).unwrap();
 
         //println!("{}",row_string);
-        file.serialize(&[row_string]);
-    }
+       match file.serialize(&[row_string]){
+           Err(e)=>{println!("{:?}",e)}
+           _ => {}
+           }
+        }
 
     pub fn format_key( k : &CustomKey) -> (String,String){
-        let mut ip_s = k.ip_source.clone();
+        let  ip_s = k.ip_source.clone();
         let mut s = String::new();
         for n in ip_s{
             s.push_str(n.to_string().as_str());
@@ -434,7 +460,7 @@ pub mod network_features {
         s.push_str(port_s.to_string().as_str());
 
         let mut d = String::new();
-        let mut ip_d = k.ip_dest.clone();
+        let  ip_d = k.ip_dest.clone();
         for n in ip_d{
             d.push_str(n.to_string().as_str());
             d.push('.');
@@ -446,24 +472,37 @@ pub mod network_features {
         return (s,d)
     }
 
-
-    ///Receive the HashMap<String, CustomData> and the filter on the minimum byte threshold provided by the user. Drops all the rows
-    ///of th HashMamp with cumulative byte lenght lower than threshold
-    pub fn filter_len(mut map: HashMap<CustomKey, CustomData>, len_minimum: u64) -> HashMap<CustomKey, CustomData> {
+    ///Receive the HashMap<String, CustomData> and the filter on the required source address provided by the user. Drops all the rows
+    ///of the HashMamp which don't contains that address.
+    pub fn filter_ip_address_source( map: HashMap<CustomKey, CustomData>, ip_filter: Vec<u8> ) -> HashMap<CustomKey, CustomData> {
         let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
             let keyy = raw.0;
             let vall = raw.1;
-            if vall.len as u64> len_minimum {
+            if keyy.ip_source.clone().eq(&ip_filter){
                 filtered_map.insert(keyy, vall);
             }
         }
         return filtered_map
     }
 
-    ///Receive the HashMap<String, CustomData> and the filter on the required address/port provided by the user. Drops all the rows
-    ///of the HashMamp which don't contains that address/filter
-    pub fn filter_port(mut map: HashMap<CustomKey, CustomData>, port: u16) -> HashMap<CustomKey, CustomData> {
+    ///Receive the HashMap<String, CustomData> and the filter on the required destination address provided by the user. Drops all the rows
+    ///of the HashMamp which don't contains that address
+    pub fn filter_ip_address_dest( map: HashMap<CustomKey, CustomData>, ip_filter: Vec<u8> ) -> HashMap<CustomKey, CustomData> {
+        let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
+        for raw in map {
+            let keyy = raw.0;
+            let vall = raw.1;
+            if keyy.ip_dest.clone().eq(&ip_filter){
+                filtered_map.insert(keyy, vall);
+            }
+        }
+        return filtered_map
+    }
+
+    ///Receive the HashMap<String, CustomData> and the filter on the required source port provided by the user. Drops all the rows
+    ///of the HashMamp which don't contains that port
+    pub fn filter_port_source( map: HashMap<CustomKey, CustomData>, port: u16) -> HashMap<CustomKey, CustomData> {
         let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
             let keyy = raw.0;
@@ -475,9 +514,37 @@ pub mod network_features {
         return filtered_map
     }
 
+    ///Receive the HashMap<String, CustomData> and the filter on the required destination port provided by the user. Drops all the rows
+    ///of the HashMamp which don't contains that port
+    pub fn filter_port_dest( map: HashMap<CustomKey, CustomData>, port: u16) -> HashMap<CustomKey, CustomData> {
+        let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
+        for raw in map {
+            let keyy = raw.0;
+            let vall = raw.1;
+            if keyy.port_dest.clone()== port {
+                filtered_map.insert(keyy, vall);
+            }
+        }
+        return filtered_map
+    }
+
+    ///Receive the HashMap<String, CustomData> and the filter on the minimum byte threshold provided by the user. Drops all the rows
+    ///of th HashMamp with cumulative byte lenght lower than threshold
+    pub fn filter_len( map: HashMap<CustomKey, CustomData>, len_minimum: u64) -> HashMap<CustomKey, CustomData> {
+        let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
+        for raw in map {
+            let keyy = raw.0;
+            let vall = raw.1;
+            if vall.len as u64> len_minimum {
+                filtered_map.insert(keyy, vall);
+            }
+        }
+        return filtered_map
+    }
+
     ///Receive the HashMap<String, CustomData> and the protocol name filter provided by the user. Drops all the rows
     ///of th HashMamp which don't contains the specifie protocol
-    pub fn filter_protocol(mut map: HashMap<CustomKey, CustomData>, protocol_required: String) -> HashMap<CustomKey, CustomData> {
+    pub fn filter_protocol( map: HashMap<CustomKey, CustomData>, protocol_required: String) -> HashMap<CustomKey, CustomData> {
         let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
             let mut insert = false;
@@ -511,11 +578,30 @@ pub mod network_features {
     }
 
     ///Print the basic menu of available commands on the terminal
-    pub fn print_menu() {
-        println!("THE CAPTURE IS GOING ON....");
-        println!("digit 'pause' to temporaly stop the sniffing");
-        println!("digit 'resume' to resume the sniffing");
-        println!("digit 'end' to finish the sniffing");
+    pub fn print_menu(parameters: ArgsParameters) {
+        println!("{}",Style::new().bold().fg(Colour::Green).paint("\nCAPTURE IS GOING ON.."));
+        if !parameters.filter_port_set_dest && !parameters.filter_port_set_source && !parameters.filter_address_set_source && !parameters.filter_address_set_dest  && !parameters.filter_bytes_set && !parameters.filter_protocols_set{
+            println!("(You are running the capture {})",Style::new().underline().paint("without filters") );
+        }
+        if parameters.filter_address_set_source {
+            let v = parameters.filter_address_source;
+            let mut s = String::new();
+            for n in v {
+                s.push(char::from(n));
+                s.push('.')
+            }
+            println!("(You are running the capture with filter on {}:  {})", Style::new().bold().paint("Source ip address"),  Style::new().bold().paint(s) );
+        }
+        if parameters.filter_bytes_set {
+            println!("\t-You are using the filter on the {} {}", Style::new().bold().paint("byte threshold:"), Style::new().bold().paint(parameters.bytes_threshold.to_string()) );
+        }
+        if parameters.filter_protocols_set {
+            println!("\t-You are using the filter on the {} {}", Style::new().bold().paint("protocol:"), Style::new().bold().paint(parameters.protocol_name) );
+        }
+        println!("{}", Style::new().bold().paint("\nAvailable comands are:"));
+        println!("\t-digit {} to temporaly stop the sniffing", Style::new().underline().bold().paint("pause"));
+        println!("\t-digit {} to resume the sniffing", Style::new().underline().bold().paint("resume"));
+        println!("\t-digit {} to finish the sniffing", Style::new().underline().bold().paint("end"));
     }
 
 }

@@ -5,14 +5,14 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 use pcap::Device;
 use network_analyzer_lib::{network_features, structures, argparse};
+use ansi_term::Style;
 
 fn main() {
 
     let matched_arguments = argparse::initialize_cli_parser();
     let parameters = argparse::matches_arguments(matched_arguments);
-    println!("{:?}",parameters);
     argparse::print_title();
-    network_features::print_menu();
+    network_features::print_menu(parameters.clone());
 
     let pause = Arc::new(Mutex::new(false));
     let pause_copy= pause.clone();
@@ -95,7 +95,8 @@ fn main() {
         }
         if line.contains("resume") {
             *pause.lock().unwrap() = false;
-            println!("CAPTURE IS GOING ON");
+            println!("{}",
+                     Style::new().bold().paint("\n\t\t\tCAPTURE IS GOING ON"));
         }
         if *end_copy.lock().unwrap() {break}
     }
