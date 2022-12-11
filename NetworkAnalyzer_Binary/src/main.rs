@@ -1,18 +1,21 @@
 
 use std::{thread};
 use std::collections::HashMap;
+use std::io::Write;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 use pcap::Device;
 use network_analyzer_lib::{network_features, structures, argparse};
+use ansi_term::{Colour, Style};
 
 fn main() {
 
     let matched_arguments = argparse::initialize_cli_parser();
     let parameters = argparse::matches_arguments(matched_arguments);
-    println!("{:?}",parameters);
+    let parameters_cloned = parameters.clone();
     argparse::print_title();
-    network_features::print_menu();
+    let mut capturing = true;
+    network_features::print_menu(parameters.clone(), capturing);
 
     let pause = Arc::new(Mutex::new(false));
     let pause_copy= pause.clone();
@@ -82,28 +85,36 @@ fn main() {
         let end_copy= end.clone();
         let mut line = String::new();
         println!("Enter your command :");
+        print!(">_");
+        std::io::stdout().flush().unwrap();
         let std_lock = std::io::stdin();
         std_lock.read_line(&mut line).unwrap();
         //let b1 = std::io::stdin().read_line(&mut line).unwrap();
         if line.contains("end") {
             *end.lock().unwrap() = true;
-            println!("goodbye");
+            println!("{}",Style::new().bold().fg(Colour::Green).paint("\nGoodbye"));
         }
         if line.contains("pause") {
             *pause.lock().unwrap() = true;
-            println!("CAPTURE IS WAITING FOR RESUMING");
+            println!("{}",Style::new().bold().fg(Colour::Yellow).paint("\nCAPTURE IS WAITING FOR RESUME.."));
+            capturing = false;
+            network_features::print_menu(parameters_cloned.clone(), capturing);
         }
         if line.contains("resume") {
             *pause.lock().unwrap() = false;
-            println!("CAPTURE IS GOING ON");
+            println!("{}",Style::new().bold().fg(Colour::Green).paint("\nCAPTURE IS GOING ON.."));
+            capturing = true;
+            network_features::print_menu(parameters_cloned.clone(), capturing);
         }
         if *end_copy.lock().unwrap() {break}
     }
 
-
+/*
     match th1.join() {
         Ok(_) => { println!("Capture ended") },
         Err(err) => { println!("{:?}",err) },
     }
+
+ */
 
 }
