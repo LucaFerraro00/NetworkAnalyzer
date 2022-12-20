@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 use pcap::Device;
 use network_analyzer_lib::{network_features, structures, argparse};
-use ansi_term::{Colour, Style};
+use colored::Colorize;
 
 fn main() {
 
@@ -24,12 +24,18 @@ fn main() {
 
     let th1 = thread::spawn(move||{
 
-        let list = Device::list().unwrap();
+        let device_list = Device::list().unwrap();
         /*match parameters.show {
             true => { network_features::print_all_devices(list.clone())}
             false => { () }
         }*/
-        let selected_code = parameters.nic_id;
+
+        let selected_code = match parameters.nic_id{
+            num if num < 0 => panic!("{}", "NicId cannot be negative".red()),
+            num if num >= device_list.len() as u64 => panic!("{} \n {}", "The index of the nicId is wrong".red(),
+            "Please check again the list of available devices running cargo run -- --list"),
+            num => num
+        } as usize;
 
         /*
         let mut available = network_features::check_device_available( selected_code as i32,list.clone());
@@ -47,7 +53,7 @@ fn main() {
         loop {
             let e = end_copy.clone();
             let p = pause_copy.clone();
-            let selected_device = list[(selected_code as usize) -1].clone();
+            let selected_device = device_list[selected_code].clone();
             if *p.lock().unwrap()==false {
                 let interval = Duration::from_secs(parameters.time_interval);
                 let diff = now.elapsed().unwrap();
@@ -92,17 +98,17 @@ fn main() {
         //let b1 = std::io::stdin().read_line(&mut line).unwrap();
         if line.contains("end") {
             *end.lock().unwrap() = true;
-            println!("{}",Style::new().bold().fg(Colour::Green).paint("\nGoodbye"));
+            println!("{}","\nGoodbye".bold().green());
         }
         if line.contains("pause") {
             *pause.lock().unwrap() = true;
-            println!("{}",Style::new().bold().fg(Colour::Yellow).paint("\nCAPTURE IS WAITING FOR RESUME.."));
+            println!("{}","\nCAPTURE SNIFFING PAUSED..".bold().yellow());
             capturing = false;
             network_features::print_menu(parameters_cloned.clone(), capturing);
         }
         if line.contains("resume") {
             *pause.lock().unwrap() = false;
-            println!("{}",Style::new().bold().fg(Colour::Green).paint("\nCAPTURE IS GOING ON.."));
+            println!("{}","\nCAPTURE RESUMED..".bold().green());
             capturing = true;
             network_features::print_menu(parameters_cloned.clone(), capturing);
         }

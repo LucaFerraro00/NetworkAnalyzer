@@ -16,7 +16,7 @@ path = "src/main.rs"
 network_analyzer_lib = {path="../NetworkAnalyzer_Library"} #the name must be equal to the name of the package in cargo.toml of library
 pcap = "0.10.1"
 indicatif = "0.17.1" #si può usare??
-env_logger = "0.9.0"
+colored = "2"
 clap = { version = "3.2.21", features = ["derive"] }
 rpcap = { version = "1.0.0", features = ["time"] }
 pdu = "1.4.2"
