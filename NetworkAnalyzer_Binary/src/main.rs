@@ -32,9 +32,9 @@ fn main() {
 
         let selected_code = match parameters.nic_id{
             num if num < 0 => panic!("{}", "NicId cannot be negative".red()),
-            num if num >= device_list.len() as u64 => panic!("{} \n {}", "The index of the nicId is wrong".red(),
+            num if num >= device_list.len() as isize => panic!("{} \n {}", "The index of the nicId is wrong".red(),
             "Please check again the list of available devices running cargo run -- --list"),
-            num => num
+            num => num as usize
         } as usize;
 
         /*
@@ -120,7 +120,7 @@ fn main() {
         Ok(_) => { println!("Capture ended") },
         Err(err) => { println!("{:?}",err) },
     }
+*/
 
- */
 
 }

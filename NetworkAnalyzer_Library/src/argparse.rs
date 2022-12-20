@@ -60,7 +60,7 @@ pub fn initialize_cli_parser() -> ArgMatches {
 #[derive(Debug, Clone)]
 ///This structure aims to conatin all the parameters that can be provided by the user through CLI
 pub struct ArgsParameters {
-    pub nic_id : u64,
+    pub nic_id : isize,
     pub time_interval : u64,
     pub file_name: String,
     pub filter_address_set_source: bool,
@@ -80,7 +80,7 @@ pub struct ArgsParameters {
 
 impl ArgsParameters {
     pub fn new(
-                nic_id : u64,
+                nic_id : isize,
                 time_interval : u64,
                 file_name: String,
                 filter_address_set_source: bool,
@@ -129,7 +129,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
 
     let mut nic_id = 999;
     if let Some(nic) = matches.get_one::<String>("nic_id") {
-        match (*nic).parse::<u64>()  {
+        match (*nic).parse::<isize>()  {
             Ok(n) => {nic_id = n;}
             Err(_e) => {let msg = "nic_id must be a number! \nPlease run again the application".red();
                         println!("{}",msg);
