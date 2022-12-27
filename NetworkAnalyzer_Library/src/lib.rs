@@ -101,8 +101,8 @@ pub mod network_features {
     use std::io::{stdout, Write};
     use std::path::Path;
     use pcap::{Device, Capture};
-    use pdu::*;
-    use pdu::Tcp::Raw;
+    use pdu::{Ethernet, Ipv4, Ipv6, Udp, Tcp::Raw};
+    use pdu::{EthernetPdu};
     use crate::structures::{CustomPacket, CustomKey, CustomData};
     use serde::{Serialize};
     use dns_parser::{Packet};
@@ -111,8 +111,6 @@ pub mod network_features {
     use csv::{Writer, WriterBuilder};
     use crate::argparse;
     use colored::*;
-    use ansi_term::{Colour, Style};
-    use ansi_term::Colour::Yellow;
     use crate::argparse::ArgsParameters;
 
 
@@ -164,7 +162,6 @@ pub mod network_features {
 
         //let mut cap = selected_device.open().unwrap();
         let mut cap = Capture::from_device(selected_device).unwrap().open().unwrap();
-
 
         while let Ok(packet) = cap.next_packet() {
             //println!("{:?}",packet);
@@ -581,9 +578,9 @@ pub mod network_features {
     ///Print the basic menu of available commands on the terminal
     pub fn print_menu(parameters: ArgsParameters, capturing: bool) {
         if capturing {
-            println!("{}", Style::new().bold().fg(Colour::Green).paint("\nCAPTURE IS GOING ON.."));
+            println!("{}", "\nCAPTURE IS GOING ON..".bold().green());
             if !parameters.filter_port_set_dest && !parameters.filter_port_set_source && !parameters.filter_address_set_source && !parameters.filter_address_set_dest && !parameters.filter_bytes_set && !parameters.filter_protocols_set {
-                println!("(You are running the capture {})", Style::new().underline().paint("without filters"));
+                println!("(You are running the capture {})", "without filters".underline().bold());
             }
             if parameters.filter_address_set_source {
                 let v = parameters.filter_address_source;
@@ -592,7 +589,8 @@ pub mod network_features {
                     s.push_str(n.to_string().as_str());
                     s.push('.')
                 }
-                println!("\tYou are running the capture with filter on {}: {}", Style::new().bold().fg(Yellow).paint("Source ip address"), Style::new().bold().paint(s));
+                println!("\tYou are running the capture with filter on {}: {}",
+                         "Source ip address".bold().yellow(), s.bold());
             }
 
             if parameters.filter_address_set_dest {
@@ -602,31 +600,37 @@ pub mod network_features {
                     s.push_str(n.to_string().as_str());
                     s.push('.')
                 }
-                println!("\tYou are running the capture with filter on {}: {}", Style::new().bold().fg(Yellow).paint("Destination ip address"), Style::new().bold().paint(s));
+                println!("\tYou are running the capture with filter on {}: {}",
+                         "Destination ip address".bold().yellow(), s.bold());
             }
 
             if parameters.filter_port_set_source {
                 let port = parameters.port_source;
-                println!("\tYou are running the capture with filter on {}: {}", Style::new().bold().fg(Yellow).paint("Source port"), Style::new().bold().paint(port.to_string()));
+                println!("\tYou are running the capture with filter on {}: {}",
+                         "Source port".bold().yellow(), port.to_string().bold());
             }
 
             if parameters.filter_port_set_dest {
                 let port = parameters.port_dest;
-                println!("\tYou are running the capture with filter on {}: {}", Style::new().bold().fg(Yellow).paint("Destination port"), Style::new().bold().paint(port.to_string()));
+                println!("\tYou are running the capture with filter on {}: {}",
+                         "Destination port".bold().yellow(), port.to_string().bold());
             }
 
             if parameters.filter_bytes_set {
-                println!("\t-You are using the filter on the {} {}", Style::new().bold().fg(Yellow).paint("byte threshold:"), Style::new().bold().paint(parameters.bytes_threshold.to_string()));
+                println!("\t-You are using the filter on the {} {}",
+                         "byte threshold:".bold().yellow(),
+                         parameters.bytes_threshold.to_string().bold());
             }
             if parameters.filter_protocols_set {
-                println!("\t-You are using the filter on the {} {}", Style::new().bold().fg(Yellow).paint("protocol:"), Style::new().bold().paint(parameters.protocol_name));
+                println!("\t-You are using the filter on the {} {}", "protocol:".bold().yellow(),
+                         parameters.protocol_name.bold());
             }
             println!("");
         }
-        println!("{}", Style::new().bold().paint("Available comands are:"));
-        println!("\t-digit {} to temporaly stop the sniffing", Style::new().underline().bold().paint("pause"));
-        println!("\t-digit {} to resume the sniffing", Style::new().underline().bold().paint("resume"));
-        println!("\t-digit {} to finish the sniffing", Style::new().underline().bold().paint("end"));
+        println!("{}", "Available comands are:".bold());
+        println!("\t-digit {} to temporaly stop the sniffing", "pause".bold().underline());
+        println!("\t-digit {} to resume the sniffing", "resume".bold().underline());
+        println!("\t-digit {} to finish the sniffing", "end".bold().underline());
     }
 
 }

@@ -57,6 +57,7 @@ fn main() {
             if *p.lock().unwrap()==false {
                 let interval = Duration::from_secs(parameters.time_interval);
                 let diff = now.elapsed().unwrap();
+                println!("Elapsed time {:?}", diff);
                 if diff > interval {
                     print_report=true;
                     now = SystemTime::now();
