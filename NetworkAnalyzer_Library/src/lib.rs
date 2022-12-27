@@ -129,8 +129,7 @@ pub mod network_features {
                 Some(des) => String::from(des),
                 _ => String::new()
             };
-            println!("| {0: ^7} | {1: <20} | {2: <20 } | {3: <50} |", j, d.name,
-                     addresses_str, description);
+            println!("| {0: ^7} | {1: <20} | {2: <20 } | {3: <30} ", j, d.name, addresses_str, description);
             //println!("{}) NAME: {} -- DESCRIPTION: {}",i,d.name, d.desc.unwrap());
             i = i + 1;
         }
@@ -158,7 +157,7 @@ pub mod network_features {
     /// When a packet is received it is passed to function parser_level2_packet which cares about parsing packets byte.
     ///The function capture_packet also updates the HashMap<CustomKey, CustomData> which contains the informations of the captured packets.
     ///Furthermore this functions check the interval previosuly provided by the user. If the interval is elapsed capture_packet calls write_to_file function to store to the file the updated informations about ntwork analisys
-    pub fn capture_packet(selected_device: Device, arguments : &argparse::ArgsParameters, mut map: HashMap<CustomKey, CustomData>) -> Result<HashMap<CustomKey, CustomData>, String> {
+    pub fn capture_packet(selected_device: Device, _arguments : &argparse::ArgsParameters, mut map: HashMap<CustomKey, CustomData>) -> Result<HashMap<CustomKey, CustomData>, String> {
 
         match Capture::from_device(selected_device).unwrap().open() {
             Ok(mut cap) => {
@@ -198,7 +197,7 @@ pub mod network_features {
                 }
                 return Ok(map);
             }//fine ok
-            Err(e) => { return Err(String::new()) }
+            Err(_e) => { return Err(String::new()) }
         }//fine match
     }
 

@@ -48,7 +48,7 @@ fn main() {
                 let interval = Duration::from_secs(parameters.time_interval);
                 let diff = now.elapsed().unwrap();
                 if diff > interval {
-                    println!("Print file {:?}", diff);
+                    //println!("Print file {:?}", diff);
                     network_features::write_to_file(map.clone(), &parameters);
                     now = SystemTime::now();
                 }
@@ -56,7 +56,7 @@ fn main() {
                    Ok(m) => {
                        map = m;
                    }
-                    Err(e)=> {
+                    Err(_e)=> {
                         println!("{}", "\n\n...\nERROR: pcap is not able to open the capture on the selected device!".red());
                         std::process::exit(0);
                     }
