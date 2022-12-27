@@ -158,49 +158,48 @@ pub mod network_features {
     /// When a packet is received it is passed to function parser_level2_packet which cares about parsing packets byte.
     ///The function capture_packet also updates the HashMap<CustomKey, CustomData> which contains the informations of the captured packets.
     ///Furthermore this functions check the interval previosuly provided by the user. If the interval is elapsed capture_packet calls write_to_file function to store to the file the updated informations about ntwork analisys
-    pub fn capture_packet(selected_device: Device, arguments : &argparse::ArgsParameters, print_report: bool, mut map: HashMap<CustomKey, CustomData>) -> HashMap<CustomKey, CustomData> {
+    pub fn capture_packet(selected_device: Device, arguments : &argparse::ArgsParameters, mut map: HashMap<CustomKey, CustomData>) -> Result<HashMap<CustomKey, CustomData>, String> {
 
-        //let mut cap = selected_device.open().unwrap();
-        let mut cap = Capture::from_device(selected_device).unwrap().open().unwrap();
+        match Capture::from_device(selected_device).unwrap().open() {
+            Ok(mut cap) => {
+                while let Ok(packet) = cap.next_packet() {
+                    //println!("{:?}",packet);
+                    let mut custom_packet = CustomPacket::new(
+                        packet.header.len
+                    );
+                    parse_level2_packet(packet.data, &mut custom_packet);
+                    let key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port, custom_packet.dest_addr, custom_packet.dest_port);
+                    let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list);
 
-        while let Ok(packet) = cap.next_packet() {
-            //println!("{:?}",packet);
-            let mut custom_packet = CustomPacket::new(
-                packet.header.len
-            );
-            parse_level2_packet(packet.data, &mut custom_packet);
-            let key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port, custom_packet.dest_addr, custom_packet.dest_port);
-            let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list);
-
-            let r = map.get(&key1);//let r = map.get(&key_string);
-            match r {
-                Some(d) => {
-                    let mut old_value = d.clone();
-                    old_value.len = old_value.len + custom_data.len;
-                    let timestamp2 = now_date_hour();
-                    old_value.end_timestamp = timestamp2;
-                    /*for protocol in custom_data.protocols {
-                        if !old_value.protocols.contains(&protocol) {
-                            println!("new protocol");
-                            old_value.protocols.push(protocol)
+                    let r = map.get(&key1);//let r = map.get(&key_string);
+                    match r {
+                        Some(d) => {
+                            let mut old_value = d.clone();
+                            old_value.len = old_value.len + custom_data.len;
+                            let timestamp2 = now_date_hour();
+                            old_value.end_timestamp = timestamp2;
+                            /*for protocol in custom_data.protocols {
+                            if !old_value.protocols.contains(&protocol) {
+                                println!("new protocol");
+                                old_value.protocols.push(protocol)
+                            }
+                        }*/
+                            old_value.protocols = custom_data.protocols;
+                            map.insert(key1, old_value);
                         }
-                    }*/
-                    old_value.protocols = custom_data.protocols;
-                    map.insert(key1, old_value);
+                        None => {
+                            let timestamp_start = now_date_hour();
+                            custom_data.start_timestamp = timestamp_start.clone();
+                            custom_data.end_timestamp = timestamp_start;
+                            map.insert(key1, custom_data);
+                        }
+                    }
+                    break
                 }
-                None => {
-                    let timestamp_start = now_date_hour();
-                    custom_data.start_timestamp = timestamp_start.clone();
-                    custom_data.end_timestamp = timestamp_start;
-                    map.insert(key1, custom_data);
-                }
-            }
-            if print_report {
-                write_to_file(map.clone(), arguments);
-            }
-            break
-        }
-        return map;
+                return Ok(map);
+            }//fine ok
+            Err(e) => { return Err(String::new()) }
+        }//fine match
     }
 
     ///This function exploits the features provide by pdu library.
