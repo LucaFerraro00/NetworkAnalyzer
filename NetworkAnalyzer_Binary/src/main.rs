@@ -13,6 +13,20 @@ fn main() {
     let matched_arguments = argparse::initialize_cli_parser();
     let parameters = argparse::matches_arguments(matched_arguments);
     let parameters_cloned = parameters.clone();
+    //check if device is available
+    let device_list = Device::list().unwrap();
+    let selected_code = match parameters.nic_id{
+        num if num < 0 => {
+            println!("{}", "ERROR: NicId cannot be negative".red());
+            return;
+        },
+        num if num >= device_list.len() as isize =>{
+            println!("{} \n\t{}", "ERROR: The index of the nicId is wrong".red(),
+                     "Please check again the list of available devices running cargo run -- --list");
+            //std::process::exit(-1);
+            return;
+        }  num => num as usize
+    } as usize;
     argparse::print_title();
     let mut capturing = true;
     network_features::print_menu(parameters.clone(), capturing);
@@ -22,33 +36,9 @@ fn main() {
     let end = Arc::new(Mutex::new(false));
     let end_copy= end.clone();
 
-    let th1 = thread::spawn(move||{
-
-        let device_list = Device::list().unwrap();
-        /*match parameters.show {
-            true => { network_features::print_all_devices(list.clone())}
-            false => { () }
-        }*/
-
-        let selected_code = match parameters.nic_id{
-            num if num < 0 => panic!("{}", "NicId cannot be negative".red()),
-            num if num >= device_list.len() as isize => panic!("{} \n {}", "The index of the nicId is wrong".red(),
-            "Please check again the list of available devices running cargo run -- --list"),
-            num => num as usize
-        } as usize;
-
-        /*
-        let mut available = network_features::check_device_available( selected_code as i32,list.clone());
-        while !available {
-            println!("The selected network adapter is not available!");
-            println!("The available network adapter are: ");
-            network_features::print_all_devices(list.clone());
-            selected_code = network_features::select_device().parse::<u64>().unwrap();
-            available = network_features::check_device_available( selected_code as i32, list.clone());
-        }*/
+    let _th1 = thread::spawn(move||{
 
         let mut now = SystemTime::now();
-        let mut print_report = false;
         let mut map : HashMap<structures::CustomKey, structures::CustomData> = HashMap::new();
         loop {
             let e = end_copy.clone();
@@ -58,34 +48,25 @@ fn main() {
                 let interval = Duration::from_secs(parameters.time_interval);
                 let diff = now.elapsed().unwrap();
                 if diff > interval {
-                    print_report=true;
+                    //println!("Print file {:?}", diff);
+                    network_features::write_to_file(map.clone(), &parameters);
                     now = SystemTime::now();
                 }
-                map = network_features::capture_packet(selected_device, &parameters, print_report,  map);
-                print_report=false;
+                match network_features::capture_packet(selected_device, &parameters,  map){
+                   Ok(m) => {
+                       map = m;
+                   }
+                    Err(_e)=> {
+                        println!("{}", "\n\n...\nERROR: pcap is not able to open the capture on the selected device!".red());
+                        std::process::exit(0);
+                    }
+                }
             }
             //println!("dentro loop thread secondario: end={}",*end.lock().unwrap());
             if *e.lock().unwrap() {break}
         }
     });
 
-    /*THREAD PER LA STAMPA DI UNA BARA COME FEEDBACK PER INDICARE CHE LA CATTURA E' IN CORSO
-    let th2 = thread::spawn(move ||{
-        loop {
-            let mut e = end_copy2.clone();
-            let mut p = pause_copy2.clone();
-                let pb = ProgressBar::new(8);
-                for _ in 0..8 {
-                    if *e.lock().unwrap() {break}
-                    if ! (*p.lock().unwrap()) {
-                        pb.inc(1);
-                        thread::sleep(Duration::from_secs(1));
-                    }
-                }
-                pb.finish_and_clear();
-                if *e.lock().unwrap() {break}
-        }
-    });*/
 
     loop {
         let end_copy= end.clone();
@@ -114,13 +95,6 @@ fn main() {
         }
         if *end_copy.lock().unwrap() {break}
     }
-
-/*
-    match th1.join() {
-        Ok(_) => { println!("Capture ended") },
-        Err(err) => { println!("{:?}",err) },
-    }
-*/
 
 
 }

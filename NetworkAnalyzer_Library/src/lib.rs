@@ -10,6 +10,86 @@
 //! # Examples
 //! An easy way to use this library is to create a thread to sniff and parse packet, while the main thread
 //! listen and updates commands inserted by user:
+//!```no_run
+//!let mut matched_arguments = argparse::initialize_cli_parser();
+//!     let mut parameters = argparse::matches_arguments(matched_arguments);
+//!     argparse::print_title();
+//!     network_features::print_menu();
+//!
+//!    let mut pause = Arc::new(Mutex::new(false));
+//!     let mut pause_copy= pause.clone();
+//!     let mut pause_copy2= pause.clone();
+//!     let mut end = Arc::new(Mutex::new(false));
+//!     let mut end_copy= end.clone();
+//!     let mut end_copy2= end.clone();
+//!
+//!     let th1 = thread::spawn(move||{
+//!
+//!         let list = Device::list().unwrap();
+//!         /*match parameters.show {
+//!             true => { network_features::print_all_devices(list.clone())}
+//!             false => { () }
+//!         }*/
+//!         let mut selected_code = parameters.nic_id;
+//!
+//!         let mut available = network_features::check_device_available( selected_code as i32,list.clone());
+//!         while !available {
+//!             println!("The selected network adapter is not available!");
+//!             println!("The available network adapter are: ");
+//!             network_features::print_all_devices(list.clone());
+//!             selected_code = network_features::select_device().parse::<u64>().unwrap();
+//!             available = network_features::check_device_available( selected_code as i32, list.clone());
+//!         }
+//!
+//!         let mut now = SystemTime::now();
+//!         let mut print_report = false;
+//!
+//!
+//!         let mut map : HashMap<structures::CustomKey, structures::CustomData> = HashMap::new();
+//!
+//!         loop {
+//!             let mut e = end_copy.clone();
+//!             let mut p = pause_copy.clone();
+//!             let selected_device = list[(selected_code as usize) -1].clone();
+//!             if *p.lock().unwrap()==false {
+//!                 let interval = Duration::from_secs(parameters.time_interval);
+//!                 let mut diff = now.elapsed().unwrap();
+//!                 if diff > interval {
+//!                     print_report=true;
+//!                     now = SystemTime::now();
+//!                 }
+//!                 map = network_features::capture_packet(selected_device, parameters.file_name.clone(), print_report, map);
+//!                 print_report=false;
+//!             }
+//!             //println!("dentro loop thread secondario: end={}",*end.lock().unwrap());
+//!             if *e.lock().unwrap() {break}
+//!         }
+//!     });
+//!
+//!
+//!     loop {
+//!         let mut end_copy= end.clone();
+//!         let mut line = String::new();
+//!         println!("Enter your command :");
+//!         let mut std_lock = std::io::stdin();
+//!         std_lock.read_line(&mut line).unwrap();
+//!         //let b1 = std::io::stdin().read_line(&mut line).unwrap();
+//!         if line.contains("end") {
+//!             *end.lock().unwrap() = true;
+//!             println!("goodbye");
+//!         }
+//!         if line.contains("pause") {
+//!             *pause.lock().unwrap() = true;
+//!             println!("CAPTURE IS WAITING FOR RESUMING");
+//!         }
+//!         if line.contains("resume") {
+//!             *pause.lock().unwrap() = false;
+//!             println!("CAPTURE IS GOING ON");
+//!         }
+//!         if *end_copy.lock().unwrap() {break}
+//!     }
+//! ```
+//!
 
 pub mod structures;
 pub mod argparse;
@@ -80,21 +160,16 @@ pub mod network_features {
     ///Furthermore this functions check the interval previosuly provided by the user. If the interval is elapsed capture_packet calls write_to_file function to store to the file the updated informations about ntwork analisys
     pub fn capture_packet(selected_device: Device, arguments : &argparse::ArgsParameters, print_report: bool, mut map: HashMap<CustomKey, CustomData>) -> HashMap<CustomKey, CustomData> {
 
-        //let mut cap = selected_device.open().unwrap();
-        let cap_inactive = Capture::from_device(selected_device);
-        let mut cap = cap_inactive.expect("Error in device retrieving for capture")
-            .timeout(5000)
-            .open().expect("Cannot open the capturing for the device");
-
-        while let Ok(packet) = cap.next_packet() {
-
-            //println!("{:?}",packet);
-            let mut custom_packet = CustomPacket::new(
-                packet.header.len
-            );
-            parse_level2_packet(packet.data, &mut custom_packet);
-            let key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port, custom_packet.dest_addr, custom_packet.dest_port);
-            let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list);
+        match Capture::from_device(selected_device).unwrap().open() {
+            Ok(mut cap) => {
+                while let Ok(packet) = cap.next_packet() {
+                    //println!("{:?}",packet);
+                    let mut custom_packet = CustomPacket::new(
+                        packet.header.len
+                    );
+                    parse_level2_packet(packet.data, &mut custom_packet);
+                    let key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port, custom_packet.dest_addr, custom_packet.dest_port);
+                    let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list);
 
             let r = map.get(&key1);//let r = map.get(&key_string);
             match r {
