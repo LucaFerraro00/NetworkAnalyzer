@@ -157,9 +157,10 @@ pub mod network_features {
     /// When a packet is received it is passed to function parser_level2_packet which cares about parsing packets byte.
     ///The function capture_packet also updates the HashMap<CustomKey, CustomData> which contains the informations of the captured packets.
     ///Furthermore this functions check the interval previosuly provided by the user. If the interval is elapsed capture_packet calls write_to_file function to store to the file the updated informations about ntwork analisys
-    pub fn capture_packet(selected_device: Device, _arguments : &argparse::ArgsParameters, mut map: HashMap<CustomKey, CustomData>) -> Result<HashMap<CustomKey, CustomData>, String> {
+    pub fn capture_packet(selected_device: Device, arguments : &ArgsParameters, mut map: HashMap<CustomKey, CustomData>) -> Result<HashMap<CustomKey, CustomData>, String> {
 
-        match Capture::from_device(selected_device).unwrap().open() {
+        match Capture::from_device(selected_device).unwrap()
+            .timeout((arguments.time_interval * 1000) as i32).open() {
             Ok(mut cap) => {
                 while let Ok(packet) = cap.next_packet() {
                     //println!("{:?}",packet);
