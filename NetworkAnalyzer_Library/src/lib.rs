@@ -100,6 +100,7 @@ pub mod network_features {
     use std::fs::File;
     use std::io::{stdout, Write};
     use std::path::Path;
+    use std::ptr::write;
     use pcap::{Device, Capture};
     use pdu::{Ethernet, Ipv4, Ipv6, Udp, Tcp::Raw};
     use pdu::{EthernetPdu};
@@ -377,10 +378,10 @@ pub mod network_features {
                 let msg = "Error in report file generation/update: ".red();
                 println!( "{} {}", msg, e.to_string().as_str().red() );
                 let msg ="Please check the error and start the application again".red();
-                println!("{}",msg);
-                std::process::exit(0);
+                panic!("{}",msg);
             }
         }
+
         //filter the hashmap
         let mut map_to_print: HashMap<CustomKey, CustomData> = map.clone();
         if arguments.filter_address_set_source {
@@ -401,46 +402,18 @@ pub mod network_features {
         if arguments.filter_protocols_set{
             map_to_print = filter_protocol(map_to_print, arguments.protocol_name.clone());
         }
+
         //print on a file. Must be converted in a csv file
-        //serde_json::to_writer(file, &map_to_print).unwrap();
-        //file.write_record(&["ip address/Port", "        Length","    Protocols", "      Start Time", "      End Time"]);
-        #[derive (Serialize)]
-        struct Record {
-            ip_port_source : String,
-            ip_port_dest : String,
-            length : String,
-            protocols : String,
-            start_timestamp: String,
-            end_timestamp:String,
-        }
-
-        let mut wtr = WriterBuilder::new()
-            //.delimiter(b',')
-            .has_headers(true)
-            .from_writer(vec![]);
-
+        file.write_record(&["IP/Port Source", "IP/Port Dest",
+            "packet_size", "protocols", "start_timestamp", "stop_timestamp"]).unwrap();
         for key in map_to_print.keys() {
             let (source,dest) = format_key(key);
-            /*file.serialize(formatted_key);
-            file.serialize(map_to_print.get(key));
-            file.write_record(&[""]);*/
-
-            wtr.serialize(Record {
-                ip_port_source : source,
-                ip_port_dest : dest,
-                length: map_to_print.get(key).unwrap().len.clone().to_string(),
-                protocols: map_to_print.get(key).unwrap().protocols.clone().join("-"),
-                start_timestamp: map_to_print.get(key).unwrap().start_timestamp.clone(),
-                end_timestamp: map_to_print.get(key).unwrap().end_timestamp.clone()
-            }).unwrap();
-        }
-        wtr.flush().unwrap();
-        let row_string = String::from_utf8(wtr.into_inner().unwrap()).unwrap();
-
-        //println!("{}",row_string);
-        match file.serialize(&[row_string]){
-            Err(e)=>{println!("{:?}",e)}
-            _ => {}
+            file.write_record([source, dest,
+                              map_to_print.get(key).unwrap().len.clone().to_string(),
+                              map_to_print.get(key).unwrap().protocols.clone().join("-"),
+                              map_to_print.get(key).unwrap().start_timestamp.clone(),
+                              map_to_print.get(key).unwrap().end_timestamp.clone()
+                          ]).unwrap();
         }
     }
 
