@@ -1,7 +1,7 @@
 
 use std::{thread};
 use std::collections::HashMap;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 use pcap::Device;
@@ -36,7 +36,7 @@ fn main() {
     let end = Arc::new(Mutex::new(false));
     let end_copy= end.clone();
 
-    let _th1 = thread::spawn(move||{
+    let th1 = thread::spawn(move||{
 
         let mut now = SystemTime::now();
         let mut map : HashMap<structures::CustomKey, structures::CustomData> = HashMap::new();
@@ -57,8 +57,7 @@ fn main() {
                        map = m;
                    }
                     Err(_e)=> {
-                        println!("{}", "\n\n...\nERROR: pcap is not able to open the capture on the selected device!".red());
-                        std::process::exit(0);
+                        panic!("{}", "\n\n...\nERROR: pcap is not able to open the capture on the selected device!".red());
                     }
                 }
             }
@@ -67,34 +66,40 @@ fn main() {
         }
     });
 
+    let user_command_thread = thread::spawn(move ||
+        {
+            let end_copy = end.clone();
+            loop{
+                let mut line = String::new();
+                let stdin_ref = std::io::stdin();
+                print!("\nEnter your command :\n>_");
+                std::io::stdout().flush().expect("Cannot write on stdout");
+                stdin_ref.read_line(& mut line).expect("Cannot read from stdin");
 
-    loop {
-        let end_copy= end.clone();
-        let mut line = String::new();
-        println!("Enter your command :");
-        print!(">_");
-        std::io::stdout().flush().unwrap();
-        let std_lock = std::io::stdin();
-        std_lock.read_line(&mut line).unwrap();
-        //let b1 = std::io::stdin().read_line(&mut line).unwrap();
-        if line.contains("end") {
-            *end.lock().unwrap() = true;
-            println!("{}","\nGoodbye".bold().green());
-        }
-        if line.contains("pause") {
-            *pause.lock().unwrap() = true;
-            println!("{}","\nCAPTURE SNIFFING PAUSED..".bold().yellow());
-            capturing = false;
-            network_features::print_menu(parameters_cloned.clone(), capturing);
-        }
-        if line.contains("resume") {
-            *pause.lock().unwrap() = false;
-            println!("{}","\nCAPTURE RESUMED..".bold().green());
-            capturing = true;
-            network_features::print_menu(parameters_cloned.clone(), capturing);
-        }
-        if *end_copy.lock().unwrap() {break}
+                if line.contains("end") {
+                    *end.lock().unwrap() = true;
+                    println!("{}","\nGoodbye".bold().green());
+                }
+                if line.contains("pause") {
+                    *pause.lock().unwrap() = true;
+                    println!("{}","\nCAPTURE SNIFFING PAUSED..".bold().yellow());
+                    capturing = false;
+                    network_features::print_menu(parameters_cloned.clone(), capturing);
+                }
+                if line.contains("resume") {
+                    *pause.lock().unwrap() = false;
+                    println!("{}","\nCAPTURE RESUMED..".bold().green());
+                    capturing = true;
+                    network_features::print_menu(parameters_cloned.clone(), capturing);
+                }
+                if *end_copy.lock().unwrap() {break}
+            }
+        });
+
+    // devo aspettare che il thread del packet sniffing termini in uno stato coerente.
+    match th1.join()
+    {
+        Ok(_result) => (),
+        Err(_err) => ()
     }
-
-
 }
