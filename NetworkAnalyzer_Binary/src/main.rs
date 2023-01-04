@@ -44,6 +44,7 @@ fn main() {
             let e = end_copy.clone();
             let p = pause_copy.clone();
             let selected_device = device_list[selected_code].clone();
+            if *e.lock().unwrap() {break}
             if *p.lock().unwrap()==false {
                 let interval = Duration::from_secs(parameters.time_interval);
                 let diff = now.elapsed().unwrap();
@@ -62,7 +63,6 @@ fn main() {
                 }
             }
             //println!("dentro loop thread secondario: end={}",*end.lock().unwrap());
-            if *e.lock().unwrap() {break}
         }
     });
 
