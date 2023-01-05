@@ -11,85 +11,96 @@
 //! An easy way to use this library is to create a thread to sniff and parse packet, while the main thread
 //! listen and updates commands inserted by user:
 //!```no_run
-//!let mut matched_arguments = argparse::initialize_cli_parser();
-//!     let mut parameters = argparse::matches_arguments(matched_arguments);
+//!     let matched_arguments = argparse::initialize_cli_parser();
+//!     let parameters = argparse::matches_arguments(matched_arguments);
+//!     let parameters_cloned = parameters.clone();
+//!     //check if device is available
+//!     let device_list = Device::list().unwrap();
+//!     let selected_code = match parameters.nic_id{
+//!         num if num < 0 => {
+//!             println!("{}", "ERROR: NicId cannot be negative".red());
+//!            return;
+//!         },
+//!        num if num >= device_list.len() as isize =>{
+//!            println!("{} \n\t{}", "ERROR: The index of the nicId is wrong".red(),
+//!                     "Please check again the list of available devices running cargo run -- --list");
+//!             return;
+//!         }  num => num as usize
+//!     } as usize;
 //!     argparse::print_title();
-//!     network_features::print_menu();
+//!     let mut capturing = true;
+//!     network_features::print_menu(parameters.clone(), capturing);
 //!
-//!    let mut pause = Arc::new(Mutex::new(false));
-//!     let mut pause_copy= pause.clone();
-//!     let mut pause_copy2= pause.clone();
-//!     let mut end = Arc::new(Mutex::new(false));
-//!     let mut end_copy= end.clone();
-//!     let mut end_copy2= end.clone();
+//!     let pause = Arc::new(Mutex::new(false));
+//!     let pause_copy= pause.clone();
+//!     let end = Arc::new(Mutex::new(false));
+//!     let end_copy= end.clone();
 //!
 //!     let th1 = thread::spawn(move||{
 //!
-//!         let list = Device::list().unwrap();
-//!         /*match parameters.show {
-//!             true => { network_features::print_all_devices(list.clone())}
-//!             false => { () }
-//!         }*/
-//!         let mut selected_code = parameters.nic_id;
-//!
-//!         let mut available = network_features::check_device_available( selected_code as i32,list.clone());
-//!         while !available {
-//!             println!("The selected network adapter is not available!");
-//!             println!("The available network adapter are: ");
-//!             network_features::print_all_devices(list.clone());
-//!             selected_code = network_features::select_device().parse::<u64>().unwrap();
-//!             available = network_features::check_device_available( selected_code as i32, list.clone());
-//!         }
-//!
 //!         let mut now = SystemTime::now();
-//!         let mut print_report = false;
-//!
-//!
 //!         let mut map : HashMap<structures::CustomKey, structures::CustomData> = HashMap::new();
-//!
 //!         loop {
-//!             let mut e = end_copy.clone();
-//!             let mut p = pause_copy.clone();
-//!             let selected_device = list[(selected_code as usize) -1].clone();
+//!             let e = end_copy.clone();
+//!             let p = pause_copy.clone();
+//!             let selected_device = device_list[selected_code].clone();
+//!             if *e.lock().unwrap() {break}
 //!             if *p.lock().unwrap()==false {
 //!                 let interval = Duration::from_secs(parameters.time_interval);
-//!                 let mut diff = now.elapsed().unwrap();
+//!                 let diff = now.elapsed().unwrap();
 //!                 if diff > interval {
-//!                     print_report=true;
+//!                     //println!("Print file {:?}", diff);
+//!                     network_features::write_to_file(map.clone(), &parameters);
 //!                     now = SystemTime::now();
 //!                 }
-//!                 map = network_features::capture_packet(selected_device, parameters.file_name.clone(), print_report, map);
-//!                 print_report=false;
+//!                 match network_features::capture_packet(selected_device, &parameters,  map){
+//!                    Ok(m) => {
+//!                        map = m;
+//!                    }
+//!                     Err(_e)=> {
+//!                         let msg ="ERROR: pcap is not able to open the capture on the selected device!".red();
+//!                         println!( "\n{}", msg );
+//!                         panic!("");
+//!                     }
+//!                 }
 //!             }
-//!             //println!("dentro loop thread secondario: end={}",*end.lock().unwrap());
-//!             if *e.lock().unwrap() {break}
 //!         }
 //!     });
 //!
+//!     let _user_command_thread = thread::spawn(move ||
+//!         {
+//!             let end_copy = end.clone();
+//!             loop{
+//!                 let mut line = String::new();
+//!                 let stdin_ref = std::io::stdin();
+//!                 print!("\nEnter your command :\n>");
+//!                 std::io::stdout().flush().expect("Cannot write on stdout");
+//!                 stdin_ref.read_line(& mut line).expect("Cannot read from stdin");
 //!
-//!     loop {
-//!         let mut end_copy= end.clone();
-//!         let mut line = String::new();
-//!         println!("Enter your command :");
-//!         let mut std_lock = std::io::stdin();
-//!         std_lock.read_line(&mut line).unwrap();
-//!         //let b1 = std::io::stdin().read_line(&mut line).unwrap();
-//!         if line.contains("end") {
-//!             *end.lock().unwrap() = true;
-//!             println!("goodbye");
-//!         }
-//!         if line.contains("pause") {
-//!             *pause.lock().unwrap() = true;
-//!             println!("CAPTURE IS WAITING FOR RESUMING");
-//!         }
-//!         if line.contains("resume") {
-//!             *pause.lock().unwrap() = false;
-//!             println!("CAPTURE IS GOING ON");
-//!         }
-//!         if *end_copy.lock().unwrap() {break}
-//!     }
-//! ```
+//!                 match line.trim().to_lowercase().as_str() {
+//!                     "end" =>{ *end.lock().unwrap() = true;
+//!                         println!("{}","\nGoodbye".bold().green());},
+//!                     "pause" =>{
+//!                         *pause.lock().unwrap() = true;
+//!                         println!("{}","\nCAPTURE SNIFFING PAUSED..".bold().yellow());
+//!                         capturing = false;
+//!                         network_features::print_menu(parameters_cloned.clone(), capturing);
+//!                     },
+//!                     "resume" =>{
+//!                         *pause.lock().unwrap() = false;
+//!                         println!("{}","\nCAPTURE RESUMED..".bold().green());
+//!                         capturing = true;
+//!                         network_features::print_menu(parameters_cloned.clone(), capturing);
+//!                     },
+//!                     _ => {
+//!                         let msg ="Unrecognized command, please check available commands in the menu and try again".red();
+//!                         println!( "\n{}", msg );
+//!                     }
+//!                 }
+//!                 if *end_copy.lock().unwrap() {break}
 //!
+//!             }
+//!         });
 
 pub mod structures;
 pub mod argparse;
@@ -100,16 +111,14 @@ pub mod network_features {
     use std::fs::File;
     use std::io::{stdout, Write};
     use std::path::Path;
-    use std::ptr::write;
     use pcap::{Device, Capture};
     use pdu::{Ethernet, Ipv4, Ipv6, Udp, Tcp::Raw};
     use pdu::{EthernetPdu};
     use crate::structures::{CustomPacket, CustomKey, CustomData};
-    use serde::{Serialize};
     use dns_parser::{Packet};
     use chrono::{DateTime, Local};
     use std::string::String;
-    use csv::{Writer, WriterBuilder};
+    use csv::{Writer};
     use crate::argparse;
     use colored::*;
     use crate::argparse::ArgsParameters;
@@ -158,9 +167,10 @@ pub mod network_features {
     /// When a packet is received it is passed to function parser_level2_packet which cares about parsing packets byte.
     ///The function capture_packet also updates the HashMap<CustomKey, CustomData> which contains the informations of the captured packets.
     ///Furthermore this functions check the interval previosuly provided by the user. If the interval is elapsed capture_packet calls write_to_file function to store to the file the updated informations about ntwork analisys
+    ///If the capture is not availabe an error is generated. Errors are transferred to the caller function which should handle it
     pub fn capture_packet(selected_device: Device, arguments : &ArgsParameters, mut map: HashMap<CustomKey, CustomData>) -> Result<HashMap<CustomKey, CustomData>, String> {
 
-        match Capture::from_device(selected_device).unwrap()
+        match Capture::from_device(selected_device).unwrap().promisc(true)
             .timeout((arguments.time_interval * 1000) as i32).open() {
             Ok(mut cap) => {
                 while let Ok(packet) = cap.next_packet() {
@@ -207,6 +217,7 @@ pub mod network_features {
     /// It takes as input a stream of byte &[u8] and parse it. Starts from the network layer pdu and then goes deep up to transport layer.
     /// At each level of the stack the struct CustomPacket is updated with the information spotted (protocol name, protocol, address).
     /// When pdu of level 4 is reached the dns_parser external library is used to check if packet is carrying DNS protocol. Finally the updated struct CustomPacket is returned
+    /// If the packet has some unrecognized protocols the user is notified, but the application keeps working
     pub fn parse_level2_packet(packet_data: &[u8], custom_packet: &mut CustomPacket) {
         // parse a layer 2 (Ethernet) packet using EthernetPdu::new()
 
@@ -361,9 +372,9 @@ pub mod network_features {
         }
     }
 
-
-
+    ///Update the file with the information of sniffed packets
     pub fn write_to_file( map: HashMap<CustomKey, CustomData>, arguments : &argparse::ArgsParameters)  {
+
         let mut f_name = arguments.file_name.clone();
         //path_name.push_str(".txt");
         f_name.push_str(".csv");
@@ -376,9 +387,9 @@ pub mod network_features {
             Ok(f)=>{  file = f;}
             Err(e) => {
                 let msg = "Error in report file generation/update: ".red();
-                println!( "{} {}", msg, e.to_string().as_str().red() );
-                let msg ="Please check the error and start the application again".red();
-                panic!("{}",msg);
+                let msg2 ="Please check the error and start the application again".red();
+                println!( "\n{} {} \n{}", msg, e.to_string().as_str().red(), msg2 );
+                panic!("");
             }
         }
 
@@ -551,6 +562,9 @@ pub mod network_features {
     pub fn print_menu(parameters: ArgsParameters, capturing: bool) {
         if capturing {
             println!("{}", "\nCAPTURE IS GOING ON..".bold().green());
+            println!("\t-The selected nicId is {}", parameters.nic_id.to_string().bold());
+            println!("\t-A new report will be generated after {} seconds", parameters.time_interval.to_string().bold());
+            println!("\t-The new report will be saved inside 'results' directory with the name {}.csv", parameters.file_name.bold());
             if !parameters.filter_port_set_dest && !parameters.filter_port_set_source && !parameters.filter_address_set_source && !parameters.filter_address_set_dest && !parameters.filter_bytes_set && !parameters.filter_protocols_set {
                 println!("(You are running the capture {})", "without filters".underline().bold());
             }
@@ -561,7 +575,7 @@ pub mod network_features {
                     s.push_str(n.to_string().as_str());
                     s.push('.')
                 }
-                println!("\tYou are running the capture with filter on {}: {}",
+                println!("\t-You are running the capture with filter on {}: {}",
                          "Source ip address".bold().yellow(), s.bold());
             }
 
@@ -572,19 +586,19 @@ pub mod network_features {
                     s.push_str(n.to_string().as_str());
                     s.push('.')
                 }
-                println!("\tYou are running the capture with filter on {}: {}",
+                println!("\t-You are running the capture with filter on {}: {}",
                          "Destination ip address".bold().yellow(), s.bold());
             }
 
             if parameters.filter_port_set_source {
                 let port = parameters.port_source;
-                println!("\tYou are running the capture with filter on {}: {}",
+                println!("\t-You are running the capture with filter on {}: {}",
                          "Source port".bold().yellow(), port.to_string().bold());
             }
 
             if parameters.filter_port_set_dest {
                 let port = parameters.port_dest;
-                println!("\tYou are running the capture with filter on {}: {}",
+                println!("\t-You are running the capture with filter on {}: {}",
                          "Destination port".bold().yellow(), port.to_string().bold());
             }
 

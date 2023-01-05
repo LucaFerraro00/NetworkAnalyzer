@@ -25,38 +25,6 @@ pub fn initialize_cli_parser() -> ArgMatches {
     return parser.get_matches();
 }
 
-    /*pub fn manage_cli_parameters() -> ArgMatches {
-        let matches = command!() // requires `cargo` feature
-            .arg(arg!([nic_id] "Network adapter to operate on").value_parser(value_parser!(u8)))
-            .arg(arg!([file_name] "File name to print the report").value_parser(value_parser!(String)))
-            .arg(arg!([time_interval] "Time interval for printing the report").value_parser(value_parser!(u8)))
-            .arg(
-                arg!(
-                -a --address <id> "Sets an address/port you want to filter"
-                )       // We don't have syntax yet for optional options, so manually calling `required`
-                    .required(false)
-            )
-            .arg(
-                arg!(
-                -b --byte_threshold <bytes> "Sets a minimum threshold of nyte len to filter"
-                )       // We don't have syntax yet for optional options, so manually calling `required`
-                    .required(false)
-                    .value_parser(value_parser!(u8))
-            )
-            .arg(
-                arg!(
-                -p --protocols <name> "Sets a protocol name you want to filter"
-                )       // We don't have syntax yet for optional options, so manually calling `required`
-                    .required(false)
-            )
-            .arg(arg!(
-            -l --list ... "List available adapters"
-              )
-            )
-            .get_matches();
-        return matches
-    }*/
-
 #[derive(Debug, Clone)]
 ///This structure aims to conatin all the parameters that can be provided by the user through CLI
 pub struct ArgsParameters {
@@ -118,7 +86,8 @@ impl ArgsParameters {
     }
 }
 
-///Take the ArgMatches struct and trasforms it into a ArgsParameters struct which is more handleable
+///Take the ArgMatches struct and trasforms it into a ArgsParameters struct which is more handleable.
+/// Panic if some the CLI parameters is invalid
 pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
 
     if matches.contains_id("list") {
@@ -133,7 +102,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
             Ok(n) => {nic_id = n;}
             Err(_e) => {let msg = "nic_id must be a number! \nPlease run again the application".red();
                         println!("{}",msg);
-                        std::process::exit(0);}
+                        panic!("");}
         }
     }
 
@@ -143,7 +112,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
             Ok(f) => {file_name = f;}
             Err(_e) => {let msg = "file_name must be a String! \nPlease run again the application".red();
                 println!("{}",msg);
-                std::process::exit(0);}
+                panic!("");}
         }
     }
 
@@ -153,7 +122,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
             Ok(t) => { time_interval = t;}
             Err(_e) => {let msg = "time_interval must be a number! \nPlease run again the application".red();
                 println!("{}",msg);
-                std::process::exit(0);}
+                panic!("");}
         }
 
     }
@@ -180,7 +149,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
             Ok(p) => { port_filter_source = p;}
             Err(_e) => {let msg = "port_filter must be a number! \nPlease run again the application".red();
                 println!("{}",msg);
-                std::process::exit(0);}
+                panic!("");}
         }
     }
 
@@ -192,7 +161,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
             Ok(p) => { port_filter_dest = p;}
             Err(_e) => {let msg = "port_filter must be a number! \nPlease run again the application".red();
                 println!("{}",msg);
-                std::process::exit(0);}
+                panic!("");}
         }
     }
 
@@ -204,7 +173,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
             Ok(t) => { byte_threshold = t;}
             Err(_e) => {let msg = "byte_threshold must be a number! \nPlease run again the application".red();
                 println!("{}",msg);
-                std::process::exit(0);}
+                panic!("");}
         }
 
     }
@@ -217,7 +186,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
             Ok(p) => { protocol_name = p;}
             Err(_e) => {let msg = "protocol_filter must be a number! \nPlease run again the application".red();
                 println!("{}",msg);
-                std::process::exit(0);}
+                panic!("");}
         }
     }
 
@@ -258,7 +227,7 @@ pub fn print_title() {
     println!("{}", title.red().green());
 }
 
-
+///Check if the ip inserted as filter is valid
 pub fn check_ip_addres( add : String) -> Vec<u8>{
     let a : String= (*add.clone().to_string()).parse().unwrap();
     let split = a.as_str().split(".");
@@ -273,7 +242,7 @@ pub fn check_ip_addres( add : String) -> Vec<u8>{
         let msg2 = "Example of address formats available:\n\t172.22.32.37\n\t157.240.231.16".green();
         println!("{}",msg1);
         println!("{}",msg2);
-        std::process::exit(0);}
+            panic!("");}
         }
     }
     address_vec
