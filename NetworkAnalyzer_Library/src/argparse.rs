@@ -7,7 +7,7 @@ use pcap::Device;
 
 
 
-///Collect the cli parameters in to the struct clap::parser::ArgMatches
+/// Collect the cli parameters into the struct clap::parser::ArgMatches
 pub fn initialize_cli_parser() -> ArgMatches {
     let parser = Command::new("Network Sniffer")
         .arg(Arg::new("nic_id").help("The target network interface card to be user").required(true))
@@ -26,7 +26,7 @@ pub fn initialize_cli_parser() -> ArgMatches {
 }
 
 #[derive(Debug, Clone)]
-///This structure aims to conatin all the parameters that can be provided by the user through CLI
+/// This structure aims to contain all the parameters that can be provided by the user through CLI
 pub struct ArgsParameters {
     pub nic_id : isize,
     pub time_interval : u64,
@@ -86,7 +86,7 @@ impl ArgsParameters {
     }
 }
 
-///Take the ArgMatches struct and trasforms it into a ArgsParameters struct which is more handleable.
+/// Take the ArgMatches struct and trasforms it into a ArgsParameters struct which is more handleable.
 /// Panic if some the CLI parameters is invalid
 pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
 
@@ -217,7 +217,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
     arg_parameters
 }
 
-///Print "Network Analyzer" in a cool way in to the user terminal
+/// Print "Network Analyzer" in a cool way in to the user terminal
 pub fn print_title() {
     let title =
         " _  _       _                       _                    _   __   __           \n\
@@ -227,7 +227,7 @@ pub fn print_title() {
     println!("{}", title.red().green());
 }
 
-///Check if the ip inserted as filter is valid
+/// Check if the ip inserted as filter is valid
 pub fn check_ip_addres( add : String) -> Vec<u8>{
     let a : String= (*add.clone().to_string()).parse().unwrap();
     let split = a.as_str().split(".");

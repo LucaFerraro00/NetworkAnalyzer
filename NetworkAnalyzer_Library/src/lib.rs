@@ -106,7 +106,7 @@ pub mod structures;
 pub mod argparse;
 
 pub mod network_features {
-    //!Contains all the functions to capture, parse and store the informations sniffed in network packets
+    //! Contains all the functions to capture, parse and store the informations sniffed in network packets
     use std::collections::HashMap;
     use std::fs::File;
     use std::io::{stdout, Write};
@@ -124,7 +124,7 @@ pub mod network_features {
     use crate::argparse::ArgsParameters;
 
 
-    ///Print the list of the available network adapters of PC
+    /// Print the list of the available network adapters of PC
     pub fn print_all_devices(list: Vec<Device>) {
         let mut i = 1;
         //println!("The available devices are:");
@@ -157,17 +157,17 @@ pub mod network_features {
         return line.trim().to_string();
     }
 
-    ///Check if the selected network adapter exists and is available.
+    /// Check if the selected network adapter exists and is available.
     /// Return true if avaialable, otherwise false
     pub fn check_device_available(selected: i32, list: Vec<Device>) -> bool {
         selected < list.len() as i32
     }
 
-    ///Start the capture session using pcap features.
+    /// Start the capture session using pcap features.
     /// When a packet is received it is passed to function parser_level2_packet which cares about parsing packets byte.
-    ///The function capture_packet also updates the HashMap<CustomKey, CustomData> which contains the informations of the captured packets.
-    ///Furthermore this functions check the interval previosuly provided by the user. If the interval is elapsed capture_packet calls write_to_file function to store to the file the updated informations about ntwork analisys
-    ///If the capture is not availabe an error is generated. Errors are transferred to the caller function which should handle it
+    /// The function capture_packet also updates the HashMap<CustomKey, CustomData> which contains the informations of the captured packets.
+    /// Furthermore this functions check the interval previosuly provided by the user. If the interval is elapsed capture_packet calls write_to_file function to store to the file the updated informations about ntwork analisys
+    /// If the capture is not availabe an error is generated. Errors are transferred to the caller function which should handle it
     pub fn capture_packet(selected_device: Device, arguments : &ArgsParameters, mut map: HashMap<CustomKey, CustomData>) -> Result<HashMap<CustomKey, CustomData>, String> {
 
         match Capture::from_device(selected_device).unwrap().promisc(true)
@@ -213,7 +213,7 @@ pub mod network_features {
         }//fine match
     }
 
-    ///This function exploits the features provide by pdu library.
+    /// This function exploits the features provide by pdu library.
     /// It takes as input a stream of byte &[u8] and parse it. Starts from the network layer pdu and then goes deep up to transport layer.
     /// At each level of the stack the struct CustomPacket is updated with the information spotted (protocol name, protocol, address).
     /// When pdu of level 4 is reached the dns_parser external library is used to check if packet is carrying DNS protocol. Finally the updated struct CustomPacket is returned
@@ -372,7 +372,7 @@ pub mod network_features {
         }
     }
 
-    ///Update the file with the information of sniffed packets
+    /// Update the file with the information of sniffed packets
     pub fn write_to_file( map: HashMap<CustomKey, CustomData>, arguments : &argparse::ArgsParameters)  {
 
         let mut f_name = arguments.file_name.clone();
@@ -453,8 +453,8 @@ pub mod network_features {
         return (s,d)
     }
 
-    ///Receive the HashMap<String, CustomData> and the filter on the required source address provided by the user. Drops all the rows
-    ///of the HashMamp which don't contains that address.
+    /// Receive the HashMap<String, CustomData> and the filter on the required source address provided by the user. Drops all the rows
+    /// of the HashMamp which don't contains that address.
     pub fn filter_ip_address_source( map: HashMap<CustomKey, CustomData>, ip_filter: Vec<u8> ) -> HashMap<CustomKey, CustomData> {
         let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
@@ -467,8 +467,8 @@ pub mod network_features {
         return filtered_map
     }
 
-    ///Receive the HashMap<String, CustomData> and the filter on the required destination address provided by the user. Drops all the rows
-    ///of the HashMamp which don't contains that address
+    /// Receive the HashMap<String, CustomData> and the filter on the required destination address provided by the user. Drops all the rows
+    /// of the HashMamp which don't contains that address
     pub fn filter_ip_address_dest( map: HashMap<CustomKey, CustomData>, ip_filter: Vec<u8> ) -> HashMap<CustomKey, CustomData> {
         let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
@@ -481,8 +481,8 @@ pub mod network_features {
         return filtered_map
     }
 
-    ///Receive the HashMap<String, CustomData> and the filter on the required source port provided by the user. Drops all the rows
-    ///of the HashMamp which don't contains that port
+    /// Receive the HashMap<String, CustomData> and the filter on the required source port provided by the user. Drops all the rows
+    /// of the HashMamp which don't contains that port
     pub fn filter_port_source( map: HashMap<CustomKey, CustomData>, port: u16) -> HashMap<CustomKey, CustomData> {
         let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
@@ -495,8 +495,8 @@ pub mod network_features {
         return filtered_map
     }
 
-    ///Receive the HashMap<String, CustomData> and the filter on the required destination port provided by the user. Drops all the rows
-    ///of the HashMamp which don't contains that port
+    /// Receive the HashMap<String, CustomData> and the filter on the required destination port provided by the user. Drops all the rows
+    /// of the HashMamp which don't contains that port
     pub fn filter_port_dest( map: HashMap<CustomKey, CustomData>, port: u16) -> HashMap<CustomKey, CustomData> {
         let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
@@ -509,8 +509,8 @@ pub mod network_features {
         return filtered_map
     }
 
-    ///Receive the HashMap<String, CustomData> and the filter on the minimum byte threshold provided by the user. Drops all the rows
-    ///of th HashMamp with cumulative byte lenght lower than threshold
+    /// Receive the HashMap<String, CustomData> and the filter on the minimum byte threshold provided by the user. Drops all the rows
+    /// of th HashMamp with cumulative byte lenght lower than threshold
     pub fn filter_len( map: HashMap<CustomKey, CustomData>, len_minimum: u64) -> HashMap<CustomKey, CustomData> {
         let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
@@ -523,8 +523,8 @@ pub mod network_features {
         return filtered_map
     }
 
-    ///Receive the HashMap<String, CustomData> and the protocol name filter provided by the user. Drops all the rows
-    ///of th HashMamp which don't contains the specifie protocol
+    /// Receive the HashMap<String, CustomData> and the protocol name filter provided by the user. Drops all the rows
+    /// of th HashMamp which don't contains the specifie protocol
     pub fn filter_protocol( map: HashMap<CustomKey, CustomData>, protocol_required: String) -> HashMap<CustomKey, CustomData> {
         let mut filtered_map: HashMap<CustomKey, CustomData> = HashMap::new();
         for raw in map {
@@ -544,7 +544,7 @@ pub mod network_features {
         return filtered_map
     }
 
-    ///Exploits the chrono library's features and return actual date an hour in formatted format:
+    /// Exploits the chrono library's features and return actual date an hour in formatted format:
     /// day/month/year - hours:minutes:seconds
     ///
     /// For example: "28/10/2022 - 18:31:34.286"
@@ -558,7 +558,7 @@ pub mod network_features {
         formatted_date
     }
 
-    ///Print the basic menu of available commands on the terminal
+    /// Print the basic menu of available commands on the terminal
     pub fn print_menu(parameters: ArgsParameters, capturing: bool) {
         if capturing {
             println!("{}", "\nCAPTURE IS GOING ON..".bold().green());
