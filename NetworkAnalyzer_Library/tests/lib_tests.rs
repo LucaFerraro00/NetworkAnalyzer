@@ -3,20 +3,6 @@ use pdu::IpProto::TCP;
 use network_analyzer_lib::network_features::{filter_ip_address_dest, filter_ip_address_source, filter_port_source, filter_port_dest, filter_len, filter_protocol};
 use network_analyzer_lib::structures::{CustomData, CustomKey};
 
-/*
-#[test]
-#[ignore]
-fn arguments_ok(){
-    let mut cmd = Command::new("mycmd")
-        .arg(Arg::new("run"))
-        .arg(Arg::new("4"))
-        .arg(Arg::new("test"))
-        .arg(Arg::new("5"));
-    let res = cmd.try_get_matches_from_mut(vec!["run", "4", "test", "5"]);
-    assert!(res.is_ok() )
-}
-*/
-
 #[test]
 fn source_ip_filter_test(){
     let key = CustomKey::new(vec![192,168,1,245], 57621, vec![192,168,1,255], 57621);
