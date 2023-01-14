@@ -96,7 +96,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
         std::process::exit(0);
     }
 
-    let mut nic_id = 999;
+    let mut nic_id = 0;
     if let Some(nic) = matches.get_one::<String>("nic_id") {
         match (*nic).parse::<isize>()  {
             Ok(n) => {nic_id = n;}
@@ -116,7 +116,7 @@ pub fn matches_arguments (matches : ArgMatches) -> ArgsParameters {
         }
     }
 
-    let mut time_interval= 666;
+    let mut time_interval= 1;
     if let Some(t_interval) = matches.get_one::<String>("time_interval") {
         match (*t_interval).parse::<u64>() {
             Ok(t) => { time_interval = t;}

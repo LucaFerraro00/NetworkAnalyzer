@@ -11,7 +11,7 @@
 //! An easy way to use this library is to create a thread to sniff and parse packet, while the main thread
 //! listen and updates commands inserted by user:
 //!```no_run
-//!     let matched_arguments = argparse::initialize_cli_parser();
+//!    let matched_arguments = argparse::initialize_cli_parser();
 //!     let parameters = argparse::matches_arguments(matched_arguments);
 //!     let parameters_cloned = parameters.clone();
 //!     //check if device is available
@@ -101,6 +101,8 @@
 //!
 //!             }
 //!         });
+//!
+//!
 
 pub mod structures;
 pub mod argparse;
@@ -109,7 +111,6 @@ pub mod network_features {
     //!Contains all the functions to capture, parse and store the informations sniffed in network packets
     use std::collections::HashMap;
     use std::fs::File;
-    use std::io::{stdout, Write};
     use std::path::Path;
     use pcap::{Device, Capture};
     use pdu::{Ethernet, Ipv4, Ipv6, Udp, Tcp::Raw};
@@ -129,7 +130,7 @@ pub mod network_features {
         let mut i = 1;
         //println!("The available devices are:");
         println!("| {0:-^7} | {1:-^20} | {2:-^20} | {3:-^50} |",
-                 "Index".bold(), "Name".bold(), "Addresses".bold(), "Description".bold());
+                 "NicId".bold(), "Name".bold(), "Addresses".bold(), "Description".bold());
         for (j, d) in list.clone().iter().enumerate() {
             let addresses : Vec<String> = d.addresses.iter()
                 .map(|addr_struct | addr_struct.addr.to_string())
@@ -140,22 +141,11 @@ pub mod network_features {
                 _ => String::new()
             };
             println!("| {0: ^7} | {1: <20} | {2: <20 } | {3: <30} ", j, d.name, addresses_str, description);
-            //println!("{}) NAME: {} -- DESCRIPTION: {}",i,d.name, d.desc.unwrap());
             i = i + 1;
         }
         println!("{:-<110}", "");
     }
 
-
-    pub fn select_device() -> String {
-        let mut line = String::new();
-        println!("Enter the number of the network adapter you want to analyze");
-        print!("  > ");
-        stdout().flush().unwrap();
-        std::io::stdin().read_line(&mut line).unwrap();
-        println!("You have selected: {}", line);
-        return line.trim().to_string();
-    }
 
     ///Check if the selected network adapter exists and is available.
     /// Return true if avaialable, otherwise false
@@ -225,7 +215,6 @@ pub mod network_features {
             Ok(ethernet_pdu) => {
                 custom_packet.prtocols_list.push("ethernet".to_string());
                 //layer 2
-                // upper-layer protocols can be accessed via the inner() method
                 match ethernet_pdu.inner() {
                     Ok(Ethernet::Ipv4(ipv4_pdu)) => {
                         //layer 3

@@ -2,10 +2,8 @@
 use std::{thread};
 use std::collections::HashMap;
 use std::io::{Write};
-use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
-use clap::arg;
 use pcap::Device;
 use network_analyzer_lib::{network_features, structures, argparse};
 use colored::Colorize;
@@ -34,8 +32,8 @@ fn main() {
         }  num => num as usize
     } as usize;
     argparse::print_title();
-    let mut capturing = true;
-    network_features::print_menu(parameters.clone(), capturing);
+    let mut _capturing = true;
+    network_features::print_menu(parameters.clone(), _capturing);
 
     let pause = Arc::new(Mutex::new(false));
     let pause_copy= pause.clone();
@@ -55,7 +53,6 @@ fn main() {
                 let interval = Duration::from_secs(parameters.time_interval);
                 let diff = now.elapsed().unwrap();
                 if diff > interval {
-                    //println!("Print file {:?}", diff);
                     network_features::write_to_file(map.clone(), &parameters);
                     now = SystemTime::now();
                 }
@@ -89,14 +86,14 @@ fn main() {
                     "pause" =>{
                         *pause.lock().unwrap() = true;
                         println!("{}","\nCAPTURE SNIFFING PAUSED..".bold().yellow());
-                        capturing = false;
-                        network_features::print_menu(parameters_cloned.clone(), capturing);
+                        _capturing = false;
+                        network_features::print_menu(parameters_cloned.clone(), _capturing);
                     },
                     "resume" =>{
                         *pause.lock().unwrap() = false;
                         println!("{}","\nCAPTURE RESUMED..".bold().green());
-                        capturing = true;
-                        network_features::print_menu(parameters_cloned.clone(), capturing);
+                        _capturing = true;
+                        network_features::print_menu(parameters_cloned.clone(), _capturing);
                     },
                     _ => {
                         let msg ="Unrecognized command, please check available commands in the menu and try again".red();
