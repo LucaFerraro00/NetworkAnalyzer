@@ -49,6 +49,9 @@ select a time interval after which an updated version of the report will be gene
 
 ```
 
+## Requirements
+
+ `pcap` is needed, it can be installed following https://crates.io/crates/pcap
 
 ## Usage
 
