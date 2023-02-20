@@ -40,35 +40,7 @@ fn main() {
     let end = Arc::new(Mutex::new(false));
     let end_copy= end.clone();
 
-    let th1 = thread::spawn(move||{
 
-        let mut now = SystemTime::now();
-        let mut map : HashMap<structures::CustomKey, structures::CustomData> = HashMap::new();
-        loop {
-            let e = end_copy.clone();
-            let p = pause_copy.clone();
-            let selected_device = device_list[selected_code].clone();
-            if *e.lock().unwrap() {break}
-            if *p.lock().unwrap()==false {
-                let interval = Duration::from_secs(parameters.time_interval);
-                let diff = now.elapsed().unwrap();
-                if diff > interval {
-                    network_features::write_to_file(map.clone(), &parameters);
-                    now = SystemTime::now();
-                }
-                match network_features::capture_packet(selected_device, &parameters,  map){
-                   Ok(m) => {
-                       map = m;
-                   }
-                    Err(_e)=> {
-                        let msg ="ERROR: pcap is not able to open the capture on the selected device!".red();
-                        println!( "\n{}", msg );
-                        panic!("");
-                    }
-                }
-            }
-        }
-    });
 
     let _user_command_thread = thread::spawn(move ||
         {
@@ -105,8 +77,20 @@ fn main() {
             }
         });
 
+    let e = end_copy.clone();
+    let p = pause_copy.clone();
+    let selected_device = device_list[selected_code].clone();
+    match network_features::capture_packet(selected_device, &parameters, e, p){
+        Ok(_r) => { }
+        Err(_e)=> {
+            let msg ="ERROR: pcap is not able to open the capture on the selected device!".red();
+            println!( "\n{}", msg );
+            panic!("");
+        }
+    }
+
     // devo aspettare che il thread del packet sniffing termini in uno stato coerente.
-    match th1.join()
+    match _user_command_thread.join()
     {
         Ok(_result) => (),
         Err(_err) => ()

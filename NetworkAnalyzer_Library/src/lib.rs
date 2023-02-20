@@ -119,10 +119,13 @@ pub mod network_features {
     use dns_parser::{Packet};
     use chrono::{DateTime, Local};
     use std::string::String;
+    use std::sync::{Arc, Mutex};
     use csv::{Writer};
     use crate::argparse;
     use colored::*;
     use crate::argparse::ArgsParameters;
+    use std::time::{Duration, SystemTime};
+    use serde::de::Unexpected::Str;
 
 
     /// Print the list of the available network adapters of PC
@@ -157,49 +160,71 @@ pub mod network_features {
     /// The function capture_packet also updates the HashMap<CustomKey, CustomData> which contains the informations of the captured packets.
     /// Furthermore this functions check the interval previosuly provided by the user. If the interval is elapsed capture_packet calls write_to_file function to store to the file the updated informations about ntwork analisys
     /// If the capture is not availabe an error is generated. Errors are transferred to the caller function which should handle it
-    pub fn capture_packet(selected_device: Device, arguments : &ArgsParameters, mut map: HashMap<CustomKey, CustomData>) -> Result<HashMap<CustomKey, CustomData>, String> {
+    pub fn capture_packet(selected_device: Device, arguments : &ArgsParameters, end : Arc<Mutex<bool>>, pause : Arc<Mutex<bool>>) -> Result<String, String> {
+        let mut map : HashMap<CustomKey, CustomData> = HashMap::new();
 
-        match Capture::from_device(selected_device).unwrap().promisc(true)
-            .timeout((arguments.time_interval * 1000) as i32).open() {
-            Ok(mut cap) => {
-                while let Ok(packet) = cap.next_packet() {
-                    //println!("{:?}",packet);
-                    let mut custom_packet = CustomPacket::new(
-                        packet.header.len
-                    );
-                    parse_level2_packet(packet.data, &mut custom_packet);
-                    let key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port, custom_packet.dest_addr, custom_packet.dest_port);
-                    let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list);
+        match Capture::from_device(selected_device)
+            .unwrap()
+            .immediate_mode(true)
+            .promisc(true)
+            .open()
+        {
 
-                    let r = map.get(&key1);//let r = map.get(&key_string);
-                    match r {
-                        Some(d) => {
-                            let mut old_value = d.clone();
-                            old_value.len = old_value.len + custom_data.len;
-                            let timestamp2 = now_date_hour();
-                            old_value.end_timestamp = timestamp2;
-                            /*for protocol in custom_data.protocols {
-                            if !old_value.protocols.contains(&protocol) {
-                                println!("new protocol");
-                                old_value.protocols.push(protocol)
+            Ok( mut cap) => {
+                let mut now = SystemTime::now();
+                loop {
+                    if *end.lock().unwrap() { break }
+                    if *pause.lock().unwrap() == false {
+                        while let Ok(packet) = cap.next_packet() {
+                            if *end.lock().unwrap() { break }
+                            if *pause.lock().unwrap() == false {
+                                let interval = Duration::from_secs(arguments.time_interval);
+                            let diff = now.elapsed().unwrap();
+                            if diff > interval {
+                                now = SystemTime::now();
+                                let map_cloned = map.clone();
+                                let arguments_cloned = arguments.clone();
+                                std::thread::spawn(move || {
+                                    write_to_file(map_cloned.clone(), &arguments_cloned);
+                                });
                             }
-                        }*/
-                            old_value.protocols = custom_data.protocols;
-                            map.insert(key1, old_value);
-                        }
-                        None => {
-                            let timestamp_start = now_date_hour();
-                            custom_data.start_timestamp = timestamp_start.clone();
-                            custom_data.end_timestamp = timestamp_start;
-                            map.insert(key1, custom_data);
-                        }
+
+                                let mut custom_packet = CustomPacket::new(
+                                    packet.header.len
+                                );
+                                parse_level2_packet(packet.data, &mut custom_packet);
+                                let key1 = CustomKey::new(custom_packet.src_addr, custom_packet.src_port, custom_packet.dest_addr, custom_packet.dest_port);
+                                let mut custom_data = CustomData::new(custom_packet.len, custom_packet.prtocols_list);
+
+                                let r = map.get(&key1);
+                                match r {
+                                    Some(d) => {
+                                        let mut old_value = d.clone();
+                                        old_value.len = old_value.len + custom_data.len;
+                                        let timestamp2 = now_date_hour();
+                                        old_value.end_timestamp = timestamp2;
+
+                                        old_value.protocols = custom_data.protocols;
+                                        map.insert(key1, old_value);
+                                    }
+                                    None => {
+                                        let timestamp_start = now_date_hour();
+                                        custom_data.start_timestamp = timestamp_start.clone();
+                                        custom_data.end_timestamp = timestamp_start;
+                                        map.insert(key1, custom_data);
+                                    }
+                                }
+                            }
+                        } // fine while
                     }
-                    break
                 }
-                return Ok(map);
-            }//fine ok
+
+            }//fine ok open capture
             Err(_e) => { return Err(String::new()) }
         }//fine match
+
+        return Ok(String::new());
+
     }
 
     /// This function exploits the features provide by pdu library.
