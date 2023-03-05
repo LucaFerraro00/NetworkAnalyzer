@@ -125,7 +125,6 @@ pub mod network_features {
     use colored::*;
     use crate::argparse::ArgsParameters;
     use std::time::{Duration, SystemTime};
-    use serde::de::Unexpected::Str;
 
 
     /// Print the list of the available network adapters of PC
@@ -293,11 +292,11 @@ pub mod network_features {
                                 }
                             }
 
-                            Ok(other) => {
+                            Ok(_other) => {
                                 //println!("Unrecognized protocol inside Ipv4Pdu {:?}", other);
                             }
 
-                            Err(e) => {
+                            Err(_e) => {
                                 //println!("Parser failure of the inner content of Ipv4pdu : {:?}", e);
                             }
                         }

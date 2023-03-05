@@ -1,11 +1,9 @@
 
 use std::{thread};
-use std::collections::HashMap;
 use std::io::{Write};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime};
 use pcap::Device;
-use network_analyzer_lib::{network_features, structures, argparse};
+use network_analyzer_lib::{network_features, argparse};
 use colored::Colorize;
 
 fn main() {
