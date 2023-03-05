@@ -294,11 +294,11 @@ pub mod network_features {
                             }
 
                             Ok(other) => {
-                                println!("Unrecognized protocol inside Ipv4Pdu {:?}", other);
+                                //println!("Unrecognized protocol inside Ipv4Pdu {:?}", other);
                             }
 
                             Err(e) => {
-                                println!("Parser failure of the inner content of Ipv4pdu : {:?}", e);
+                                //println!("Parser failure of the inner content of Ipv4pdu : {:?}", e);
                             }
                         }
                     }
@@ -408,24 +408,50 @@ pub mod network_features {
 
         //filter the hashmap
         let mut map_to_print: HashMap<CustomKey, CustomData> = map.clone();
-        if arguments.filter_address_set_source {
-            map_to_print = filter_ip_address_source(map_to_print, arguments.filter_address_source.clone())
-        }
-        if arguments.filter_address_set_dest {
-            map_to_print = filter_ip_address_dest(map_to_print, arguments.filter_address_dest.clone());
-        }
-        if arguments.filter_port_set_source {
-            map_to_print = filter_port_source(map_to_print, arguments.port_source);
-        }
-        if arguments.filter_port_set_dest {
-            map_to_print = filter_port_dest(map_to_print, arguments.port_dest);
-        }
+        // starting with general filters (more possibility to filter more records)
         if arguments.filter_bytes_set {
             map_to_print = filter_len(map_to_print, arguments.bytes_threshold);
         }
         if arguments.filter_protocols_set{
             map_to_print = filter_protocol(map_to_print, arguments.protocol_name.clone());
         }
+        // now map to print has all the records of a certain protocol and within a certain threshold
+
+        // filtering the source field
+        let mut filtered_source = map_to_print.clone();
+        let mut modified_from_source = false;
+        if arguments.filter_address_set_source {
+            filtered_source = filter_ip_address_source(filtered_source, arguments.filter_address_source.clone());
+            modified_from_source = true;
+        }
+        if arguments.filter_port_set_source {
+            filtered_source = filter_port_source(filtered_source, arguments.port_source);
+            modified_from_source = true;
+        }
+
+        // filtering the dest field
+        let mut filtered_dest = map_to_print.clone();
+        let mut modified_from_dest = false;
+        if arguments.filter_address_set_dest {
+            filtered_dest = filter_ip_address_dest(filtered_dest, arguments.filter_address_dest.clone());
+            modified_from_dest = true;
+        }
+        if arguments.filter_port_set_dest {
+            filtered_dest = filter_port_dest(filtered_dest, arguments.port_dest);
+            modified_from_dest = true;
+        }
+
+        // check all cases of update
+        if modified_from_source && !modified_from_dest {
+            map_to_print = filtered_source
+        }
+        else if modified_from_dest && !modified_from_source {
+            map_to_print = filtered_dest
+        }
+        else if modified_from_source && modified_from_dest {
+            map_to_print = filtered_source.into_iter().chain(filtered_dest).collect();
+        }
+
 
         //print on a file. Must be converted in a csv file
         file.write_record(&["IP/Port Source", "IP/Port Dest",
