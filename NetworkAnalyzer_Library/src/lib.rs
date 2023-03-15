@@ -356,11 +356,11 @@ pub mod network_features {
                             }
 
                             Ok(other) => {
-                                println!("Unrecognized protocol inside Ipv6Pdu {:?}", other);
+                                //println!("Unrecognized protocol inside Ipv6Pdu {:?}", other);
                             }
 
                             Err(e) => {
-                                println!("Parser failure of the inner content of Ipv6pdu : {:?}", e);
+                                //println!("Parser failure of the inner content of Ipv6pdu : {:?}", e);
                             }
                         }
                     }
@@ -371,15 +371,15 @@ pub mod network_features {
                     }
 
                     Ok(other) => {
-                        println!("Unrecognized protocol for packet: {:?}", other);
+                        //println!("Unrecognized protocol for packet: {:?}", other);
                     }
                     Err(e) => {
-                        println!("Parser failure of EthernetPdu: {:?}", e);
+                        //println!("Parser failure of EthernetPdu: {:?}", e);
                     }
                 }
             }
             Err(e) => {
-                println!("Parser failure for packet: {:?}", e);
+                //println!("Parser failure for packet: {:?}", e);
             }
         }
     }
